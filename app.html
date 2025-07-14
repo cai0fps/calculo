@@ -1,0 +1,1924 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESTUDOS</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Carregamento robusto do MathLive -->
+    <link rel="preload" href="https://unpkg.com/mathlive/dist/mathlive.min.js" as="script">
+    <script>
+        // Define o status inicial do carregamento da biblioteca
+        window.mathliveStatus = 'loading';
+        function setMathLiveStatus(loaded) {
+            window.mathliveStatus = loaded ? 'loaded' : 'failed';
+        }
+    </script>
+    <script src="https://unpkg.com/mathlive/dist/mathlive.min.js" onload="setMathLiveStatus(true)" onerror="setMathLiveStatus(false)" defer></script>
+
+
+    <script defer src="https://cdn.jsdelivr.net/npm/nerdamer/nerdamer.all.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        main, .transition-colors-theme {
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+
+        .katex-display { margin: 0; }
+        .chart-container { position: relative; width: 100%; height: 100%; max-height: 400px; }
+
+        /* Animações */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+        .dark .loader {
+            border-color: rgba(255, 255, 255, 0.2);
+            border-top-color: #f59e0b;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Toast (Notificações) */
+        .toast {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+        .toast.is-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Modals */
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.is-open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+        }
+        .modal.is-open .modal-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* Views (Páginas) */
+        main.view-hidden {
+            display: none;
+        }
+
+        /* Acordeão */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.23, 1, 0.32, 1), padding 0.5s ease;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .accordion-content.is-open {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        /* Jogo da Memória */
+        .memory-card {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            cursor: pointer;
+            perspective: 1000px;
+        }
+        .memory-card .front-face, .memory-card .back-face {
+            backface-visibility: hidden;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 0.5rem; text-align: center;
+        }
+        .memory-card .front-face { transform: rotateY(180deg); }
+        .memory-card.flipped { transform: rotateY(180deg); }
+        .memory-card.matched {
+            transform: rotateY(180deg);
+            cursor: default;
+            box-shadow: 0 0 15px #10b981;
+            border-color: #10b981 !important;
+        }
+
+        /* Quebra de linha */
+        #solution-steps li, #ai-problem-display, #recognized-text, #scan-solution, #explanation-content, #calculator-solution-steps {
+            overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;
+        }
+
+        /* Estilos do MathLive */
+        #custom-problem-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #4b5563;
+            background-color: #374151;
+            color: #d1d5db;
+            font-size: 1.125rem; /* ~text-lg */
+            min-height: 3.5rem; /* Altura mínima para consistência */
+        }
+        #custom-problem-input:focus-within {
+             outline: none;
+             box-shadow: 0 0 0 2px #f59e0b;
+             border-color: #f59e0b;
+        }
+
+        .math-keyboard-btn {
+            background-color: #4b5563;
+            transition: background-color 0.2s;
+        }
+        .math-keyboard-btn:hover {
+            background-color: #6b7280;
+        }
+         .op-btn {
+            background-color: #374151;
+        }
+        .op-btn:hover {
+            background-color: #4b5563;
+        }
+
+        /* Estilos da Calculadora Melhorada */
+        #calculator-view .calculator-grid {
+            display: grid;
+            grid-template-areas:
+                "display display"
+                "input keyboard"
+                "actions keyboard";
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto 1fr auto;
+            gap: 1rem;
+        }
+
+        #calculator-display-area {
+            grid-area: display;
+            background-color: #1e293b;
+            border: 1px solid #4b5563;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Align content to the bottom */
+            text-align: right;
+        }
+        #calculator-input-display { min-height: 25px; font-size: 1rem; color: #94a3b8; }
+        #calculator-result-display { min-height: 45px; font-size: 2.25rem; font-weight: bold; color: #f59e0b; }
+        #calculator-error-display { min-height: 25px; color: #f87171; font-weight: 500;}
+
+        #calculator-main-panel { grid-area: input; display: flex; flex-direction: column; gap: 1rem; }
+        #math-keyboard-area { grid-area: keyboard; width: 340px; }
+        #calculator-actions { grid-area: actions; }
+
+        #math-keyboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+        .math-keyboard-btn {
+            height: 60px; font-size: 1.25rem; border-radius: 0.5rem; transition: background-color 0.2s, transform 0.1s;
+            background-color: #374151; /* slate-700 */
+        }
+        .math-keyboard-btn:active { transform: scale(0.95); }
+
+        .math-keyboard-btn.op-btn { background-color: #0f172a; color: #f59e0b; /* amber-500 */ font-weight: bold; }
+        .math-keyboard-btn.fn-btn { background-color: #4b5563; /* slate-600 */ }
+        .math-keyboard-btn:hover { background-color: #6b7280; }
+        .math-keyboard-btn.op-btn:hover { background-color: #1e293b; }
+
+        @media (max-width: 767px) {
+            #calculator-view .calculator-grid {
+                grid-template-areas: "display" "input" "actions" "keyboard";
+                grid-template-columns: 1fr;
+            }
+             #math-keyboard-area { width: 100%; }
+        }
+        /* Fim dos Estilos da Calculadora Melhorada */
+
+        /* Jogo da Memória */
+        /* Lógica da Sidebar */
+        #sidebar {
+            overflow-y: auto;
+            padding-bottom: 2rem;
+        }
+        @media (max-width: 767px) {
+            body.sidebar-open #main-container {
+                transform: translateX(16rem);
+            }
+            body.sidebar-open #sidebar-overlay {
+                opacity: 1;
+                visibility: visible;
+            }
+             #sidebar {
+                transition: transform 0.3s ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300 antialiased transition-colors-theme">
+
+<div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden transition-opacity duration-300 opacity-0 invisible"></div>
+
+<aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-slate-800 shadow-xl z-40 transform -translate-x-full md:translate-x-0">
+    <div class="p-4 pl-6 md:block" id="sidebar-title-container">
+        <h2 class="text-2xl font-bold text-amber-500 uppercase">Estudos</h2>
+    </div>
+    <nav class="mt-8 flex flex-col justify-between h-[calc(100%-100px)]">
+        <div class="space-y-2">
+            <a href="#" data-view="practice" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="target" class="w-6 h-6"></i>
+                <span>Prática</span>
+            </a>
+            <a href="#" data-view="creator" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="pen-tool" class="w-6 h-6"></i>
+                <span>Criador de Problemas</span>
+            </a>
+            <a href="#" data-view="calculator" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="plus-square" class="w-6 h-6"></i>
+                <span>Calculadora</span>
+            </a>
+            <a href="#" data-view="scan" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="camera" class="w-6 h-6"></i>
+                <span>Escanear</span>
+            </a>
+            <a href="#" data-view="learn" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="book-open" class="w-6 h-6"></i>
+                <span>Aprenda</span>
+            </a>
+            <a href="#" data-view="physics" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="cpu" class="w-6 h-6"></i>
+                <span>Jogo de Física</span>
+            </a>
+            <a href="#" data-view="fill-blanks" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="edit-3" class="w-6 h-6"></i>
+                <span>Completar Lacunas</span>
+            </a>
+            <a href="#" data-view="symbol-memory" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="grid" class="w-6 h-6"></i>
+                <span>Memória de Símbolos</span>
+            </a>
+        </div>
+        <div>
+            <a href="#" data-view="settings" class="sidebar-link flex items-center gap-3 px-4 py-3 text-lg rounded-lg mx-2 transition-all duration-200 hover:bg-slate-700 hover:pl-6">
+                <i data-feather="settings" class="w-6 h-6"></i>
+                <span>Configurações</span>
+            </a>
+        </div>
+    </nav>
+</aside>
+
+<div id="main-container" class="md:ml-64 transition-transform duration-300 ease-in-out">
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] w-full max-w-sm"></div>
+    <div id="main-content-container" class="p-4 pt-20 md:p-8 md:pt-8 relative">
+        <button id="sidebar-toggle-btn" class="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-slate-800/80 backdrop-blur-sm transition-colors">
+            <i data-feather="menu"></i>
+        </button>
+
+        <main id="home-view" data-view-id="home">
+            <header id="main-header" class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-slate-100">Ferramentas de Estudo</h1>
+                <p class="mt-2 text-lg text-slate-400">Afie as suas competências em Cálculo e Física.</p>
+            </header>
+            <div id="home-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+                <div id="select-practice" role="button" tabindex="0" class="bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-amber-900/50 hover:-translate-y-1 transition-all cursor-pointer">
+                    <div class="text-amber-500 mb-4"><i data-feather="target" class="w-12 h-12"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-100 mb-2">Modo Prática</h2>
+                    <p class="text-slate-400">Resolva problemas e receba dicas da IA.</p>
+                </div>
+                <div id="select-creator" role="button" tabindex="0" class="bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-indigo-900/50 hover:-translate-y-1 transition-all cursor-pointer">
+                    <div class="text-indigo-500 mb-4"><i data-feather="pen-tool" class="w-12 h-12"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-100 mb-2">Criador de Problemas ✨</h2>
+                    <p class="text-slate-400">Gere exercícios ilimitados com IA.</p>
+                </div>
+                <div id="select-physics" role="button" tabindex="0" class="bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-rose-900/50 hover:-translate-y-1 transition-all cursor-pointer">
+                    <div class="text-rose-500 mb-4"><i data-feather="cpu" class="w-12 h-12"></i></div>
+                    <h2 class="text-2xl font-bold text-slate-100 mb-2">Jogo de Física</h2>
+                    <p class="text-slate-400">Teste sua memória com fórmulas físicas.</p>
+                </div>
+            </div>
+        </main>
+
+        <main id="creator-view" class="view-hidden" data-view-id="creator">
+            <div class="max-w-2xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-100 text-center mb-8">✨ Gerador de Problemas com IA</h1>
+                <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8 space-y-4">
+                    <div>
+                        <label for="ai-topic" class="block text-sm font-medium text-slate-400 mb-1">Tópico</label>
+                        <input type="text" id="ai-topic" class="w-full p-3 border border-slate-600 bg-slate-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="ai-difficulty" class="block text-sm font-medium text-slate-400 mb-1">Dificuldade</label>
+                        <select id="ai-difficulty" class="w-full p-3 border border-slate-600 bg-slate-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <option value="fácil">Fácil</option>
+                            <option value="média">Média</option>
+                            <option value="difícil">Difícil</option>
+                        </select>
+                    </div>
+                    <button id="generate-ai-problem-btn" class="w-full gemini-btn font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <span id="ai-btn-text">Gerar Problema</span>
+                        <div id="ai-btn-loader" class="loader hidden"></div>
+                    </button>
+                </div>
+
+                <div id="ai-problem-container" class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8 mt-8 hidden">
+                    <h3 class="text-2xl font-bold text-slate-100 mb-4">Problema Gerado</h3>
+                    <div id="ai-problem-display" class="text-xl"></div>
+                    <button id="ai-show-solution-btn" class="mt-4 w-full bg-slate-900 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Ver Solução</button>
+                </div>
+            </div>
+        </main>
+
+        <main id="practice-view" data-view-id="practice">
+            <div class="flex justify-center mb-6">
+                <div id="streak-counter" class="bg-amber-100 text-amber-800 font-bold text-lg px-6 py-2 rounded-full shadow-md transition-transform transform scale-0">
+                    Sequência de Acertos: <span id="streak-value">0</span> 🔥
+                </div>
+            </div>
+
+            <div id="control-panel" class="bg-slate-800 shadow-lg rounded-2xl p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div>
+                        <label for="topic" class="block text-sm font-medium text-slate-400 mb-1">Tópico</label>
+                        <select id="topic" class="w-full p-3 border border-slate-600 bg-slate-700 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                            <optgroup label="Cálculo 1">
+                                <option value="derivadas">Derivadas</option>
+                                <option value="limites">Limites</option>
+                            </optgroup>
+                            <optgroup label="Cálculo 2">
+                                <option value="integrais">Integrais</option>
+                                <option value="integrais_definidas">Integrais Definidas</option>
+                                <option value="series_sequencias">Séries e Sequências</option>
+                                <option value="equacoes_diferenciais">Equações Diferenciais</option>
+                            </optgroup>
+                            <optgroup label="Cálculo 3">
+                                <option value="vetores">Vetores</option>
+                                <option value="derivadas_parciais">Derivadas Parciais</option>
+                                <option value="integrais_multiplas">Integrais Múltiplas</option>
+                            </optgroup>
+                            <optgroup label="Cálculo 4">
+                                <option value="equacoes_diferenciais_avancadas">Equações Diferenciais Avançadas</option>
+                                <option value="series_fourier">Séries de Fourier</option>
+                                <option value="transformada_laplace">Transformada de Laplace</option>
+                            </optgroup>
+                            <optgroup label="Física">
+                                <option value="cinematica">Cinemática (MRU)</option>
+                                <option value="leis_newton">Leis de Newton</option>
+                                <option value="termodinamica">Termodinâmica</option>
+                                <option value="eletromagnetismo">Eletromagnetismo</option>
+                                <option value="optica">Óptica</option>
+                                <option value="mecanica_fluidos">Mecânica dos Fluidos</option>
+                            </optgroup>
+                            <optgroup label="Matemática Geral">
+                                <option value="algebra_linear">Álgebra Linear</option>
+                                <option value="geometria_analitica">Geometria Analítica</option>
+                                <option value="estatistica_probabilidade">Estatística e Probabilidade</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="difficulty" class="block text-sm font-medium text-slate-400 mb-1">Dificuldade</label>
+                        <select id="difficulty" class="w-full p-3 border border-slate-600 bg-slate-700 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                            <option value="easy">Fácil</option>
+                            <option value="medium">Média</option>
+                            <option value="hard">Difícil</option>
+                            <option value="trigonometric">Trigonométrica</option>
+                        </select>
+                    </div>
+                    <button id="get-problem-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <span id="btn-text">Novo Problema</span>
+                        <div id="btn-loader" class="loader hidden"></div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-8">
+                <div id="problem-area" class="lg:col-span-3 bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8 flex flex-col justify-center items-center text-center min-h-[300px]">
+                    <div id="problem-display" class="text-xl md:text-2xl text-slate-100 p-4">
+                        <p id="initial-message" class="text-slate-400">Selecione um tópico e dificuldade e clique em "Novo Problema" para começar.</p>
+                    </div>
+
+                    <div id="answer-section" class="w-full max-w-md mt-6 hidden">
+                        <label for="answer-input" class="sr-only">A sua Resposta</label>
+                        <input type="text" id="answer-input" class="w-full text-center p-3 border-2 border-slate-600 bg-slate-700 rounded-lg text-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                        <button id="check-answer-btn" class="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">Verificar Resposta</button>
+                        <button id="get-hint-btn" class="w-full mt-2 gemini-btn font-bold py-3 px-4 rounded-lg shadow-md hidden">✨ Pedir uma Dica</button>
+                    </div>
+                    <button id="go-to-learn-btn" class="w-full mt-4 bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hidden">Ir para Aprenda</button>
+                </div>
+
+                <div id="stats-area" class="lg:col-span-2 bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                    <h2 class="text-2xl font-bold text-slate-100 mb-4 text-center">O Seu Progresso</h2>
+                    <p class="text-sm text-center text-slate-400 mb-4">Esta secção mostra o seu desempenho. O seu progresso é guardado automaticamente.</p>
+                    <div class="chart-container">
+                        <canvas id="progress-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="calculator-view" class="view-hidden" data-view-id="calculator">
+            <div id="calculator-content" class="p-6 md:p-0">
+                <!-- O conteúdo da calculadora será inserido aqui pelo JavaScript -->
+            </div>
+        </main>
+
+        <main id="scan-view" class="view-hidden" data-view-id="scan">
+            <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                <h2 class="text-2xl font-bold text-slate-100 mb-4">Escanear Problema</h2>
+                <p class="text-slate-400 mb-4">Aponte a sua câmera para uma expressão matemática e clique em "Escanear Imagem" para que a IA a resolva.</p>
+                <div class="flex justify-center mb-4">
+                    <button id="open-camera-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105 active:scale-95">Abrir Câmera</button>
+                </div>
+                <div id="camera-container" class="hidden relative w-full aspect-video bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center">
+                    <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <div id="scan-feedback" class="absolute inset-0 border-4 border-dashed border-amber-500 rounded-lg opacity-75"></div>
+                </div>
+                <canvas id="capture-canvas" class="hidden"></canvas>
+                <button id="scan-image-btn" class="hidden w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95">
+                    <span id="scan-btn-text">Escanear Imagem</span>
+                    <div id="scan-btn-loader" class="loader hidden"></div>
+                </button>
+                <div id="scan-results-container" class="hidden mt-6">
+                    <h3 class="text-xl font-bold text-slate-100 mb-2">Expressão Reconhecida:</h3>
+                    <div id="recognized-text" class="bg-slate-700 p-3 rounded-lg min-h-[3rem] flex items-center justify-center text-lg"></div>
+                    <div id="scan-solution" class="mt-4"></div>
+                </div>
+            </div>
+        </main>
+
+        <main id="learn-view" class="view-hidden" data-view-id="learn">
+            <div class="space-y-8 max-w-4xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-100 text-center">Aprenda Conceitos</h1>
+                <div class="space-y-4" id="accordion-container">
+                    </div>
+            </div>
+        </main>
+
+        <main id="physics-view" class="view-hidden" data-view-id="physics">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-100 text-center mb-8">Física: Jogo da Memória</h1>
+                <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-lg">
+                            <span class="font-bold">Jogadas:</span>
+                            <span id="moves-counter">0</span>
+                        </div>
+                        <div class="text-lg">
+                            <span class="font-bold">Tempo:</span>
+                            <span id="timer">0s</span>
+                        </div>
+                        <button id="restart-game-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Recomeçar</button>
+                    </div>
+                    <div id="memory-game-board" class="grid grid-cols-4 gap-4">
+                        </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="fill-blanks-view" class="view-hidden" data-view-id="fill-blanks">
+            <div class="max-w-xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-100 text-center mb-8">Completar Lacunas</h1>
+                <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                    <p class="text-slate-400 mb-4 text-center text-lg" id="fill-blanks-question"></p>
+                    <input type="text" id="fill-blanks-answer" class="w-full text-center p-3 border-2 border-slate-600 bg-slate-700 rounded-lg text-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                    <button id="fill-blanks-check-btn" class="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">Verificar</button>
+                    <button id="fill-blanks-next-btn" class="w-full mt-2 bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hidden transition-colors">Próxima Lacuna</button>
+                </div>
+            </div>
+        </main>
+
+        <main id="symbol-memory-view" class="view-hidden" data-view-id="symbol-memory">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-100 text-center mb-8">Memória de Símbolos</h1>
+                <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-lg">
+                            <span class="font-bold">Jogadas:</span>
+                            <span id="symbol-moves-counter">0</span>
+                        </div>
+                        <div class="text-lg">
+                            <span class="font-bold">Tempo:</span>
+                            <span id="symbol-timer">0s</span>
+                        </div>
+                        <button id="symbol-restart-game-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Recomeçar</button>
+                    </div>
+                    <div id="symbol-memory-game-board" class="grid grid-cols-4 gap-4">
+                        </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="settings-view" data-view-id="settings">
+            <div class="space-y-8 max-w-2xl mx-auto">
+                <div class="bg-slate-800 shadow-lg rounded-2xl p-6 md:p-8">
+                    <h2 class="text-2xl font-bold text-slate-100 mb-6">Configurações</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-200 mb-3">Chave da API do Gemini</h3>
+                            <div class="space-y-2">
+                                <div>
+                                    <label for="api-key-input" class="block text-sm font-medium text-slate-400 mb-1">Sua Chave</label>
+                                    <input type="password" id="api-key-input" class="w-full p-3 border border-slate-600 bg-slate-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" placeholder="Cole a sua chave aqui">
+                                </div>
+                                <p class="text-sm text-slate-400">
+                                    As funcionalidades de IA requerem uma chave da API do Google Gemini. Obtenha a sua gratuitamente no
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-amber-500 hover:underline">Google AI Studio</a>.
+                                </p>
+                                <button id="save-api-key-btn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105 active:scale-95">
+                                    Salvar Chave
+                                </button>
+                            </div>
+                        </div>
+                        <div class="border-t border-slate-700"></div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-200 mb-3">Dados da Aplicação</h3>
+                            <div class="flex items-center justify-between">
+                                <p class="text-slate-300">Apagar todo o seu progresso de prática.</p>
+                                <button id="reset-progress-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105 active:scale-95">
+                                    Redefinir Progresso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div id="solution-modal" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div class="modal-content bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 max-w-2xl w-full my-8 mx-auto">
+        <h3 id="modal-title" class="text-2xl font-bold text-slate-100 mb-4">Resolução Passo a Passo</h3>
+        <div>
+            <h4 class="font-bold text-slate-200 mb-2">Problema Original:</h4>
+            <div id="modal-original-problem" class="bg-slate-700 p-3 rounded-lg mb-4 text-center text-lg"></div>
+            <h4 class="font-bold text-slate-200 mb-2">Passos da Resolução:</h4>
+            <div id="solution-steps" class="space-y-4 text-slate-300"></div>
+        </div>
+        <div class="mt-4">
+            <button id="explain-steps-btn" class="w-full mt-2 gemini-btn font-bold py-3 px-4 rounded-lg shadow-md hidden">✨ Explicar os Passos</button>
+        </div>
+        <button id="close-modal-btn" class="w-full mt-6 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Entendi</button>
+    </div>
+</div>
+
+<div id="confirm-reset-modal" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]">
+    <div class="modal-content bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 max-w-sm w-full mx-auto">
+        <h3 class="text-xl font-bold text-slate-100 mb-4">Confirmar Ação</h3>
+        <p class="text-slate-400">Tem a certeza que deseja apagar todo o seu progresso? Esta ação não pode ser desfeita.</p>
+        <div class="flex justify-end gap-4 mt-6">
+            <button id="cancel-reset-btn" class="bg-slate-600 hover:bg-slate-500 text-slate-100 font-bold py-2 px-4 rounded-lg transition-colors">Cancelar</button>
+            <button id="confirm-reset-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Apagar</button>
+        </div>
+    </div>
+</div>
+
+<div id="api-key-modal" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]">
+    <div class="modal-content bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 max-w-md w-full mx-auto">
+        <h3 class="text-xl font-bold text-slate-100 mb-4">Chave da API Necessária</h3>
+        <p class="text-slate-400 mb-4">
+            Para usar esta funcionalidade, precisa de uma chave da API do Google Gemini. Por favor, adicione a sua chave nas configurações.
+        </p>
+        <p class="text-slate-400">
+            Pode obter uma chave gratuita no
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-amber-500 hover:underline font-semibold">Google AI Studio</a>.
+        </p>
+        <div class="flex justify-end gap-4 mt-6">
+            <button id="close-api-key-modal-btn" class="bg-slate-600 hover:bg-slate-500 text-slate-100 font-bold py-2 px-4 rounded-lg transition-colors">Fechar</button>
+            <a href="#" id="go-to-settings-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Ir para Configurações</a>
+        </div>
+    </div>
+</div>
+
+<div id="explanation-modal" class="modal fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[70] overflow-y-auto">
+    <div class="modal-content bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 max-w-2xl w-full my-8 mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold text-slate-100">Explicação da IA</h3>
+            <button id="close-explanation-modal-btn-icon" class="p-1 rounded-full hover:bg-slate-700 transition-colors">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div id="explanation-content" class="prose dark:prose-invert max-w-none text-slate-300">
+            </div>
+        <button id="close-explanation-modal-btn" class="w-full mt-6 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Fechar</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        feather.replace();
+
+        // --- Função utilitária para renderizar problemas ---
+        function renderProblemContent(element, problem) {
+            if (!element) return;
+            element.innerHTML = ''; // Limpa o conteúdo existente
+
+            // Garante que o elemento tenha as classes de estilo corretas
+            element.classList.add('text-xl', 'md:text-2xl', 'text-slate-100', 'p-4');
+
+            let contentToRender = '';
+            if (problem.expression_text) {
+                // Se expression_text existir, use-o como a base.
+                // Isso previne que o texto vá para dentro do renderizador de LaTeX.
+                contentToRender = problem.expression_text;
+                if (problem.expression_latex) {
+                    // Anexa a parte de LaTeX se ela também existir
+                    contentToRender += ` <br> ${problem.expression_latex}`;
+                }
+            } else if (problem.expression_latex) {
+                contentToRender = problem.expression_latex;
+            }
+
+            if (contentToRender) {
+                renderLatexInElement(element, contentToRender);
+            } else {
+                 // Exibe a mensagem de erro se o problema não estiver disponível
+                element.innerHTML = `<p class="text-slate-400 text-lg">${problem.error || "Problema não disponível."}</p>`;
+            }
+        }
+
+
+        // --- Função para renderizar LaTeX em qualquer elemento ---
+        function renderLatexInElement(element, textContent = null) {
+            if (!element || typeof katex === 'undefined') return;
+            const text = textContent || element.textContent || '';
+            element.innerHTML = ''; // Limpa o conteúdo antes de renderizar
+
+            // Regex para encontrar expressões LaTeX com delimitadores $, $$, \[, \], \(, \) - CORRIGIDO
+            const regex = /(\$\$[\s\S]*?\$\$|\$[^$\n\s][\s\S]*?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
+            const parts = text.split(regex);
+
+            parts.forEach(part => {
+                if (part && part.match(regex)) {
+                    const span = document.createElement('span');
+                    let math = part;
+                    let displayMode = false;
+
+                    // Remove os delimitadores e define o modo de exibição
+                    if (math.startsWith('$$') && math.endsWith('$$')) {
+                        math = math.slice(2, -2);
+                        displayMode = true;
+                    } else if (math.startsWith('$') && math.endsWith('$')) {
+                        math = math.slice(1, -1);
+                    } else if (math.startsWith('\\[') && math.endsWith('\\]')) {
+                        math = math.slice(2, -2);
+                        displayMode = true;
+                    } else if (math.startsWith('\\(') && math.endsWith('\\)')) {
+                        math = math.slice(2, -2);
+                    }
+
+                    try {
+                        katex.render(math, span, {
+                            throwOnError: false,
+                            displayMode: displayMode
+                        });
+                        element.appendChild(span);
+                    } catch (e) {
+                        console.error("Erro de renderização KaTeX:", e);
+                        element.appendChild(document.createTextNode(part)); // Adiciona como texto simples em caso de erro
+                    }
+                } else if (part) {
+                     // Para as partes de texto, quebramos em linhas para renderizar
+                    const textLines = part.split('<br>');
+                    textLines.forEach((line, index) => {
+                        element.appendChild(document.createTextNode(line));
+                        if (index < textLines.length - 1) {
+                             element.appendChild(document.createElement('br'));
+                        }
+                    });
+                }
+            });
+        }
+
+        // --- Estado Global e Configurações ---
+        const getInitialStats = () => ({
+            derivadas: { correct: 0, incorrect: 0 }, limites: { correct: 0, incorrect: 0 }, integrais: { correct: 0, incorrect: 0 },
+            integrais_definidas: { correct: 0, incorrect: 0 }, series_sequencias: { correct: 0, incorrect: 0 }, equacoes_diferenciais: { correct: 0, incorrect: 0 },
+            vetores: { correct: 0, incorrect: 0 }, derivadas_parciais: { correct: 0, incorrect: 0 }, integrais_multiplas: { correct: 0, incorrect: 0 },
+            equacoes_diferenciais_avancadas: { correct: 0, incorrect: 0 }, series_fourier: { correct: 0, incorrect: 0 }, transformada_laplace: { correct: 0, incorrect: 0 },
+            cinematica: { correct: 0, incorrect: 0 }, leis_newton: { correct: 0, incorrect: 0 }, termodinamica: { correct: 0, incorrect: 0 },
+            eletromagnetismo: { correct: 0, incorrect: 0 }, optica: { correct: 0, incorrect: 0 }, mecanica_fluidos: { correct: 0, incorrect: 0 },
+            algebra_linear: { correct: 0, incorrect: 0 }, geometria_analitica: { correct: 0, incorrect: 0 }, estatistica_probabilidade: { correct: 0, incorrect: 0 },
+            fill_blanks: { correct: 0, incorrect: 0 }, symbol_memory: { correct: 0, incorrect: 0 },
+        });
+
+        const state = {
+            currentProblem: null, loading: false, stats: getInitialStats(), currentView: 'home', streak: 0, modalContext: null,
+            uiInitialized: { calculator: false, physicsGame: false, learn: false, fillBlanks: false, symbolMemory: false, creator: false, scan: false },
+            stream: null,
+            physicsGame: { hasFlippedCard: false, lockBoard: false, firstCard: null, secondCard: null, moves: 0, timerInterval: null, seconds: 0 },
+            symbolMemoryGame: { hasFlippedCard: false, lockBoard: false, firstCard: null, secondCard: null, moves: 0, timerInterval: null, seconds: 0 },
+            fillBlanksGame: { currentQuestion: null, questions: [], score: 0, currentIndex: 0, },
+            aiProblem: null
+        };
+
+        // --- Seletores de DOM ---
+        const mainViews = document.querySelectorAll('#main-content-container > main');
+        const topicSelect = document.getElementById('topic'); const difficultySelect = document.getElementById('difficulty');
+        const getProblemBtn = document.getElementById('get-problem-btn'); const problemDisplay = document.getElementById('problem-display');
+        const initialMessage = document.getElementById('initial-message'); const answerSection = document.getElementById('answer-section');
+        const answerInput = document.getElementById('answer-input'); const checkAnswerBtn = document.getElementById('check-answer-btn');
+        const getHintBtn = document.getElementById('get-hint-btn'); const btnText = document.getElementById('btn-text');
+        const btnLoader = document.getElementById('btn-loader'); const chartCanvas = document.getElementById('progress-chart');
+        const toastContainer = document.getElementById('toast-container'); const solutionModal = document.getElementById('solution-modal');
+        const solutionSteps = document.getElementById('solution-steps'); const modalOriginalProblem = document.getElementById('modal-original-problem');
+        const closeModalBtn = document.getElementById('close-modal-btn'); const modalTitle = document.getElementById('modal-title');
+        const explainStepsBtn = document.getElementById('explain-steps-btn'); const confirmResetModal = document.getElementById('confirm-reset-modal');
+        const cancelResetBtn = document.getElementById('cancel-reset-btn'); const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const sidebar = document.getElementById('sidebar'); const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn'); const aiTopicInput = document.getElementById('ai-topic');
+        const aiDifficultySelect = document.getElementById('ai-difficulty'); const generateAiProblemBtn = document.getElementById('generate-ai-problem-btn');
+        const aiBtnText = document.getElementById('ai-btn-text'); const aiBtnLoader = document.getElementById('ai-btn-loader');
+        const aiProblemContainer = document.getElementById('ai-problem-container'); const aiProblemDisplay = document.getElementById('ai-problem-display');
+        const aiShowSolutionBtn = document.getElementById('ai-show-solution-btn');
+        const calculatorContent = document.getElementById('calculator-content');
+        const resetProgressBtn = document.getElementById('reset-progress-btn'); const streakCounter = document.getElementById('streak-counter');
+        const streakValue = document.getElementById('streak-value'); const openCameraBtn = document.getElementById('open-camera-btn');
+        const cameraContainer = document.getElementById('camera-container'); const cameraStream = document.getElementById('camera-stream');
+        const captureCanvas = document.getElementById('capture-canvas'); const scanImageBtn = document.getElementById('scan-image-btn');
+        const scanBtnText = document.getElementById('scan-btn-text'); const scanBtnLoader = document.getElementById('scan-btn-loader');
+        const scanResultsContainer = document.getElementById('scan-results-container'); const recognizedText = document.getElementById('recognized-text');
+        const scanSolution = document.getElementById('scan-solution'); const accordionContainer = document.getElementById('accordion-container');
+        const memoryGameBoard = document.getElementById('memory-game-board'); const movesCounter = document.getElementById('moves-counter');
+        const timerDisplay = document.getElementById('timer'); const restartGameBtn = document.getElementById('restart-game-btn');
+        const fillBlanksQuestion = document.getElementById('fill-blanks-question'); const fillBlanksAnswerInput = document.getElementById('fill-blanks-answer');
+        const fillBlanksCheckBtn = document.getElementById('fill-blanks-check-btn'); const fillBlanksNextBtn = document.getElementById('fill-blanks-next-btn');
+        const symbolMemoryGameBoard = document.getElementById('symbol-memory-game-board'); const symbolMovesCounter = document.getElementById('symbol-moves-counter');
+        const symbolTimerDisplay = document.getElementById('symbol-timer'); const symbolRestartGameBtn = document.getElementById('symbol-restart-game-btn');
+        const apiKeyInput = document.getElementById('api-key-input'); const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const apiKeyModal = document.getElementById('api-key-modal'); const closeApiKeyModalBtn = document.getElementById('close-api-key-modal-btn');
+        const goToSettingsBtn = document.getElementById('go-to-settings-btn'); const explanationModal = document.getElementById('explanation-modal');
+        const explanationContent = document.getElementById('explanation-content'); const closeExplanationModalBtnIcon = document.getElementById('close-explanation-modal-btn-icon');
+        const closeExplanationModalBtn = document.getElementById('close-explanation-modal-btn');
+        const goToLearnBtn = document.getElementById('go-to-learn-btn');
+
+        let progressChart;
+        let mathField; // Instância do MathLive
+
+        // --- MOCK API (CORRIGIDA E EXPANDIDA) ---
+        const mockApi = {
+            getProblem: (topic, difficulty) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        let problem = {};
+                        let a, b, c, n, d, r;
+
+                        if (difficulty === 'easy') { a = Math.floor(Math.random() * 4) + 2; b = Math.floor(Math.random() * 5) + 2; n = 2; c = Math.floor(Math.random() * 5) + 1; d = Math.floor(Math.random() * 3) + 1; r = Math.floor(Math.random() * 3) + 2;
+                        } else if (difficulty === 'medium') { a = Math.floor(Math.random() * 6) + 5; b = Math.floor(Math.random() * 7) + 4; n = Math.floor(Math.random() * 2) + 3; c = Math.floor(Math.random() * 10) + 5; d = Math.floor(Math.random() * 5) + 2; r = Math.floor(Math.random() * 4) + 3;
+                        } else { a = (Math.floor(Math.random() * 9) + 2); b = (Math.floor(Math.random() * 10) + 2); n = Math.floor(Math.random() * 3) + 4; c = (Math.floor(Math.random() * 15) + 2); d = Math.floor(Math.random() * 7) + 3; r = Math.floor(Math.random() * 5) + 4;
+                        }
+                        if(difficulty === 'trigonometric') { a = Math.floor(Math.random() * 3) + 1; b = Math.floor(Math.random() * 3) + 1; n = Math.floor(Math.random() * 2) + 1; c = Math.floor(Math.random() * 2) + 1; d = Math.floor(Math.random() * 2) + 1;}
+
+
+                        switch(topic) {
+                            case 'derivadas': {
+                                if (difficulty === 'trigonometric') {
+                                    const func = Math.random() < 0.5 ? 'sin' : 'cos'; const sign = Math.random() < 0.5 ? '' : '-'; let originalExpression, solutionRaw, steps;
+                                    if (func === 'sin') { originalExpression = `${sign}${a} \\sin(${b}x)`; solutionRaw = `$$${sign}${a * b} \\cos(${b}x)$$`; steps = [ { text: "Aplicar a regra da cadeia:", latex: `$$\\frac{d}{dx}(${sign}${a} \\sin(${b}x)) = ${sign}${a} \\cdot \\cos(${b}x) \\cdot ${b}$$` }, { text: "Simplificar:", latex: `$$${sign}${a * b} \\cos(${b}x)$$` } ];
+                                    } else { originalExpression = `${sign}${a} \\cos(${b}x)`; solutionRaw = `$$${sign === '-' ? '' : '-'}${a * b} \\sin(${b}x)$$`; steps = [ { text: "Aplicar a regra da cadeia:", latex: `$$\\frac{d}{dx}(${sign}${a} \\cos(${b}x)) = ${sign}${a} \\cdot (-\\sin(${b}x)) \\cdot ${b}$$` }, { text: "Simplificar:", latex: `$$${sign === '-' ? '' : '-'}${a * b} \\sin(${b}x)$$` } ]; }
+                                    problem = { expression_latex: `Calcule: $$\\frac{d}{dx}(${originalExpression})$$`, solution_raw: solutionRaw, steps: steps, hint: "Lembre-se da regra da cadeia para derivadas trigonométricas." };
+                                } else {
+                                    const newCoeff = a * n; const newExp = n - 1; let term1 = newExp > 1 ? `${newCoeff}x^${newExp}` : (newExp === 1 ? `${newCoeff}x` : `${newCoeff}`); let originalExpression = `${a}x^${n}` + (b > 0 ? `+${b}x` : `${b}x`);
+                                    problem = { expression_latex: `Calcule: $$\\frac{d}{dx}(${originalExpression})$$`, solution_raw: `$$${term1}${b > 0 ? `+${b}` : b}$$`, steps: [ { text: "Aplicar a Regra da Potência:", latex: `$$${a}(${n}x^{${n-1}}) + ${b}(1)$$` }, { text: "Simplificar:", latex: `$$${newCoeff}x^{${newExp}}${b > 0 ? `+${b}` : b}$$` } ], hint: "Use a regra da potência: $d/dx(x^n) = nx^{n-1}$." };
+                                }
+                                break;
+                            }
+                             case 'integrais': {
+                                if (difficulty === 'trigonometric') {
+                                    const func = Math.random() < 0.5 ? 'sin' : 'cos'; const sign = Math.random() < 0.5 ? '' : '-'; let originalExpression, solutionRaw, steps;
+                                    if (func === 'sin') { originalExpression = `${sign}${a} \\cos(${b}x)`; solutionRaw = `$$${sign}${a / b} \\sin(${b}x) + C$$`; steps = [ { text: "Usar u-substituição com $u=${b}x$:", latex: `$$\\frac{${sign}${a}}{${b}} \\int \\cos(u) \\,du = \\frac{${sign}${a}}{${b}} \\sin(u) + C$$` }, { text: "Substituir de volta:", latex: `$$${sign}${a/b} \\sin(${b}x) + C$$` } ];
+                                    } else { originalExpression = `${sign}${a} \\sin(${b}x)`; solutionRaw = `$$${sign === '-' ? '' : '-'}${a / b} \\cos(${b}x) + C$$`; steps = [ { text: "Usar u-substituição com $u=${b}x$:", latex: `$$\\frac{${sign}${a}}{${b}} \\int \\sin(u) \\,du = -\\frac{${sign}${a}}{${b}} \\cos(u) + C$$` }, { text: "Substituir de volta e simplificar:", latex: `$$${sign === '-' ? '' : '-'}${a / b} \\cos(${b}x) + C$$` } ]; }
+                                    problem = { expression_latex: `Calcule: $$\\int \\left(${originalExpression}\\right) \\,dx$$`, solution_raw: solutionRaw, steps: steps, hint: "Use u-substituição e lembre-se da constante C." };
+                                } else {
+                                    let integralExpression = `${a*n}x^{${n-1}}` + (b > 0 ? `+${b}` : `${b}`);
+                                    problem = { expression_latex: `Calcule: $$\\int \\left(${integralExpression}\\right) \\,dx$$`, solution_raw: `$$${a}x^${n}${b > 0 ? `+${b}x` : `${b}x`}+C$$`, steps: [ { text: "Aplicar a Regra da Potência Inversa:", latex: `$$${a*n}\\left(\\frac{x^{${n}}}{${n}}\\right) + ${b}x$$` }, { text: "Simplificar e adicionar a constante:", latex: `$$${a}x^{${n}}${b > 0 ? `+${b}x` : `${b}x`} + C$$` } ], hint: "Use a regra da potência inversa: $\\int x^n dx = x^{n+1}/(n+1) + C$." };
+                                }
+                                break;
+                            }
+                             case 'limites': {
+                                let pExpr = `${a}x^2`; if(b !== 0) { pExpr += b > 0 ? `+${b}x` : `${b}x`; }
+                                problem = { expression_latex: `Calcule: $$\\lim_{x \\to ${c}} ${pExpr}$$`, solution_raw: `$$${a*c*c + b*c}$$`, steps: [ { text: "Substituição direta, pois é um polinômio:", latex: `$$${a}(${c})^2 ${b > 0 ? `+${b}(${c})` : `${b}(${c})`}$$` }, { text: "Calcular o resultado:", latex: `$$${a*c*c + b*c}$$` } ], hint: "Para polinômios contínuos, o limite é o valor da função no ponto." };
+                                break;
+                            }
+                            case 'integrais_definidas': {
+                                let lower = c; let upper = c + d; let expr = `${a}x`; let antideriv = `\\frac{${a}}{2}x^2`; let val_upper = a/2 * upper**2; let val_lower = a/2 * lower**2;
+                                problem = { expression_latex: `Calcule: $$\\int_{${lower}}^{${upper}} ${expr} \\,dx$$`, solution_raw: `$$${val_upper - val_lower}$$`, steps: [ { text: "Encontrar a antiderivada:", latex: `$$F(x) = ${antideriv}$$` }, { text: "Aplicar o Teorema Fundamental do Cálculo $F(b) - F(a)$:", latex: `$$\\left(${antideriv}\\right) \\bigg|_{${lower}}^{${upper}} = \\left(\\frac{${a}}{2}(${upper})^2\\right) - \\left(\\frac{${a}}{2}(${lower})^2\\right) = ${val_upper} - ${val_lower}$$` }, { text: "Simplificar:", latex: `$$${val_upper - val_lower}$$` } ], hint: "Use o Teorema Fundamental do Cálculo." };
+                                break;
+                            }
+                            case 'series_sequencias': {
+                                const sum = Math.round(a * (1 - Math.pow(1/r, n)) / (1 - 1/r));
+                                problem = { expression_text: `Calcule a soma dos primeiros ${n} termos da série geométrica com primeiro termo $a_1 = ${a}$ e razão $q = 1/${r}$.`, solution_raw: `$$${sum}$$`, steps: [ { text: "Use a fórmula da soma da PG finita:", latex: `$$S_n = a_1 \\frac{1 - q^n}{1 - q}$$` }, { text: "Substitua os valores:", latex: `$$S_${n} = ${a} \\frac{1 - (1/${r})^${n}}{1 - 1/${r}}$$` }, { text: "Calcule o resultado:", latex: `$$S_${n} = ${sum}$$` }], hint: "Lembre-se da fórmula da soma de uma progressão geométrica finita." };
+                                break;
+                            }
+                            case 'equacoes_diferenciais': {
+                                problem = { expression_latex: `Resolva a EDO: $$y' = ${a}y$$`, solution_raw: `$$y = Ce^{${a}x}$$`, steps: [ { text: "Separar as variáveis:", latex: `$$\\frac{dy}{y} = ${a}\\,dx$$` }, { text: "Integrar ambos os lados:", latex: `$$\\int \\frac{1}{y}\\,dy = \\int ${a}\\,dx$$` }, { text: "Resolver as integrais:", latex: `$$\\ln|y| = ${a}x + C_1$$` }, { text: "Resolver para y e renomear a constante:", latex: `$$y = e^{${a}x + C_1} = e^{C_1}e^{${a}x} = Ce^{${a}x}$$` } ], hint: "Esta é uma equação diferencial separável." };
+                                break;
+                            }
+                            case 'vetores': {
+                                let v1 = `\\langle ${a}, ${b} \\rangle`; let v2 = `\\langle ${c}, ${d} \\rangle`; let dot_product = a*c + b*d;
+                                problem = { expression_text: `Calcule o produto escalar entre os vetores:`, expression_latex: `$$v_1 = ${v1} \\text{ e } v_2 = ${v2}$$`, solution_raw: `$$${dot_product}$$`, steps: [ { text: "Multiplicar os componentes correspondentes:", latex: `$$(${a})(${c}) + (${b})(${d})$$` }, { text: "Somar os resultados:", latex: `$$${a*c} + ${b*d} = ${dot_product}$$` } ], hint: "O produto escalar é a soma dos produtos dos componentes correspondentes." };
+                                break;
+                            }
+                            case 'derivadas_parciais': {
+                                problem = { expression_text: `Encontre a derivada parcial em relação a x:`, expression_latex: `$$f(x,y) = ${a}x^${n}y^{${d}} + ${b}y$$`, solution_raw: `$$${a*n}x^{${n-1}}y^{${d}}$$`, steps: [ { text: "Trate 'y' como uma constante e derive em relação a 'x':", latex: `$$\\frac{\\partial}{\\partial x}(${a}x^${n}y^{${d}}) + \\frac{\\partial}{\\partial x}(${b}y)$$` }, { text: "Aplique a regra da potência no primeiro termo e a regra da constante no segundo:", latex: `$$${a}y^{${d}}(${n}x^{${n-1}}) + 0$$` }, { text: "Simplifique:", latex: `$$${a*n}x^{${n-1}}y^{${d}}$$` } ], hint: "Ao derivar em relação a x, trate y como uma constante." };
+                                break;
+                            }
+                            case 'integrais_multiplas': {
+                                let result = a * c * d;
+                                problem = { expression_latex: `Calcule a integral dupla: $$\\int_{0}^{${c}} \\int_{0}^{${d}} ${a} \\,dy\\,dx$$`, solution_raw: `$$${result}$$`, steps: [ { text: "Integre em relação a y primeiro:", latex: `$$\\int_{0}^{${c}} [${a}y]_{0}^{${d}} \\,dx = \\int_{0}^{${c}} ${a*d} \\,dx$$` }, { text: "Agora, integre em relação a x:", latex: `$$[${a*d}x]_{0}^{${c}} = ${result}$$` } ], hint: "Integre de dentro para fora." };
+                                break;
+                            }
+                            case 'equacoes_diferenciais_avancadas': {
+                                problem = { expression_latex: `Encontre a solução geral para: $$y'' - ${r*r}y = 0$$`, solution_raw: `$$y(x)=C_1e^{${r}x}+C_2e^{-${r}x}$$`, steps: [ { text: "Assuma uma solução da forma $y = e^{mx}$ e encontre a equação característica:", latex: `$$m^2 - ${r*r} = 0$$` }, { text: "Encontre as raízes da equação:", latex: `$$m_1 = ${r}, m_2 = -${r}$$` }, { text: "Escreva a solução geral baseada nas raízes reais e distintas:", latex: `$$y(x) = C_1e^{m_1x} + C_2e^{m_2x}$$` } ], hint: "Use a equação característica para resolver esta EDO homogênea de segunda ordem." };
+                                break;
+                            }
+                            case 'series_fourier': {
+                                problem = { expression_text: `Encontre o coeficiente $a_0$ da série de Fourier para a função $f(x)=${a}$ no intervalo $[-\\pi, \\pi]$.`, solution_raw: `$$${2*a}$$`, steps: [ { text: "Use a fórmula para $a_0$:", latex: `$$a_0 = \\frac{1}{\\pi} \\int_{-\\pi}^{\\pi} f(x) \\,dx$$` }, { text: "Substitua f(x) e integre:", latex: `$$a_0 = \\frac{1}{\\pi} \\int_{-\\pi}^{\\pi} ${a} \\,dx = \\frac{${a}}{\\pi} [x]_{-\\pi}^{\\pi}$$` }, { text: "Calcule o resultado:", latex: `$$\\frac{${a}}{\\pi}(\\pi - (-\\pi)) = \\frac{${a}}{\\pi}(2\\pi) = ${2*a}$$` } ], hint: "$a_0$ representa o valor médio da função no período, multiplicado por 2." };
+                                break;
+                            }
+                             case 'transformada_laplace': {
+                                problem = { expression_latex: `Calcule a Transformada de Laplace de: $$f(t) = ${a}$$`, solution_raw: `$$\\frac{${a}}{s}$$`, steps: [ { text: "Use a definição da Transformada de Laplace:", latex: `$$\\mathcal{L}\\{${a}\\} = \\int_0^\\infty e^{-st} \\cdot ${a} \\,dt$$` }, { text: "Resolva a integral:", latex: `$$${a} [-\\frac{1}{s}e^{-st}]_0^\\infty$$` }, { text: "Aplique os limites:", latex: `$$${a} (0 - (-\\frac{1}{s})) = \\frac{${a}}{s}$$` } ], hint: "A transformada de uma constante 'k' é k/s." };
+                                break;
+                            }
+                            case 'cinematica': {
+                                let s0 = a, v = b, t = c; let s_final = s0 + v*t;
+                                problem = { expression_text: `Um objeto parte da posição ${s0}m com velocidade constante de ${v}m/s. Qual sua posição após ${c}s?`, solution_raw: `$$${s_final}$$`, steps: [ { text: "Use a equação do MRU:", latex: `$$s = s_0 + vt$$` }, { text: "Substitua os valores:", latex: `$$s = ${s0} + (${v})(${c})$$` }, { text: "Calcule o resultado:", latex: `$$s = ${s_final}m$$` } ], hint: "Use a fórmula da posição para Movimento Retilíneo Uniforme (MRU)." };
+                                break;
+                            }
+                            case 'leis_newton': {
+                                let m = a, acc = b; let force = m * acc;
+                                problem = { expression_text: `Qual a força necessária para acelerar um objeto de ${m}kg a ${acc}m/s²?`, solution_raw: `$$${force}$$`, steps: [ { text: "Use a Segunda Lei de Newton:", latex: `$$F = ma$$` }, { text: "Substitua os valores:", latex: `$$F = (${m})(${acc})$$` }, { text: "Calcule o resultado:", latex: `$$F = ${force}N$$` } ], hint: "$F=ma$." };
+                                break;
+                            }
+                            case 'termodinamica': {
+                                let q = a*10, w = b*10; let delta_u = q - w;
+                                problem = { expression_text: `Um sistema recebe ${q}J de calor e realiza ${w}J de trabalho. Qual a variação da sua energia interna?`, solution_raw: `$$${delta_u}$$`, steps: [ { text: "Use a Primeira Lei da Termodinâmica:", latex: `$$\\Delta U = Q - W$$` }, { text: "Substitua os valores:", latex: `$$\\Delta U = ${q} - ${w}$$` }, { text: "Calcule:", latex: `$$\\Delta U = ${delta_u}J$$` } ], hint: "Lembre-se da convenção de sinais para calor e trabalho." };
+                                break;
+                            }
+                            case 'eletromagnetismo': {
+                                let v = a*b, r_ele = a; let i = v/r_ele;
+                                problem = { expression_text: `Uma tensão de ${v}V é aplicada a um resistor de ${r_ele}Ω. Qual a corrente que flui?`, solution_raw: `$$${i}$$`, steps: [ { text: "Use a Lei de Ohm:", latex: `$$V = IR$$` }, { text: "Isole a corrente I:", latex: `$$I = V/R$$` }, { text: "Substitua e calcule:", latex: `$$I = ${v}/${r_ele} = ${i}A$$` } ], hint: "Use a Lei de Ohm (V = IR)." };
+                                break;
+                            }
+                             case 'optica': {
+                                let n1=1, n2=1.5, theta1=30; let sin_theta2 = (n1/n2) * Math.sin(Math.PI/6); // sin(30) = 0.5
+                                problem = { expression_text: `Um raio de luz passa do ar ($n_1 \\approx 1$) para o vidro ($n_2 = 1.5$) com um ângulo de incidência de 30°. Qual o seno do ângulo de refração?`, solution_raw: `$$${(n1/n2*0.5).toFixed(2)}$$`, steps: [ { text: "Use a Lei de Snell:", latex: `$$n_1 \\sin(\\theta_1) = n_2 \\sin(\\theta_2)$$` }, { text: "Isole $\\sin(\\theta_2)$:", latex: `$$\\sin(\\theta_2) = \\frac{n_1}{n_2}\\sin(\\theta_1)$$` }, { text: "Substitua e calcule:", latex: `$$\\sin(\\theta_2) = \\frac{1}{1.5}\\sin(30^\\circ) = \\frac{1}{1.5} \\cdot 0.5 \\approx 0.33$$` } ], hint: "Lembre-se da Lei de Snell para a refração." };
+                                break;
+                            }
+                            case 'mecanica_fluidos': {
+                                let rho = 1000, g = 9.8, h = a; let p = rho * g * h;
+                                problem = { expression_text: `Calcule a pressão hidrostática no fundo de uma piscina com ${h}m de profundidade. Considere $\\rho_{água} = 1000 kg/m^3$ e $g = 9.8 m/s^2$.`, solution_raw: `$$${p.toFixed(0)}$$`, steps: [ { text: "Use a fórmula da pressão hidrostática:", latex: `$$P = \\rho g h$$` }, { text: "Substitua os valores:", latex: `$$P = (1000)(9.8)(${h})$$` }, { text: "Calcule:", latex: `$$P = ${p.toFixed(0)} Pa$$` } ], hint: "A pressão em um fluido depende da densidade, gravidade e profundidade." };
+                                break;
+                            }
+                            case 'algebra_linear': {
+                                let m = [[a, b], [c, d]]; let det = a*d - b*c;
+                                problem = { expression_latex: `Calcule o determinante: $$\\begin{vmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{vmatrix}$$`, solution_raw: `$$${det}$$`, steps: [ { text: "Use a fórmula do determinante 2x2 (ad - bc):", latex: `$$(${a})(${d}) - (${b})(${c})$$` }, { text: "Calcule o resultado:", latex: `$$${a*d} - ${b*c} = ${det}$$` } ], hint: "Para uma matriz 2x2, o determinante é o produto da diagonal principal menos o produto da diagonal secundária." };
+                                break;
+                            }
+                            case 'geometria_analitica': {
+                                let p1 = {x: a, y: b}; let p2 = {x: c, y: d}; let dist_sq = (c-a)**2 + (d-b)**2;
+                                problem = { expression_text: `Calcule a distância entre os pontos A(${a},${b}) e B(${c},${d}).`, solution_raw: `$$\\sqrt{${dist_sq}}$$`, steps: [ { text: "Use a fórmula da distância entre dois pontos:", latex: `$$d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$$` }, { text: "Substitua os valores:", latex: `$$d = \\sqrt{(${c} - ${a})^2 + (${d} - ${b})^2} = \\sqrt{${(c-a)**2} + ${(d-b)**2}}$$` }, { text: "Simplifique:", latex: `$$d = \\sqrt{${dist_sq}}$$` } ], hint: "Lembre-se do Teorema de Pitágoras aplicado ao plano cartesiano." };
+                                break;
+                            }
+                             case 'estatistica_probabilidade': {
+                                let nums = [a, b, c, d]; let sum = a+b+c+d; let mean = sum/4;
+                                problem = { expression_text: `Calcule a média do seguinte conjunto de dados: {${a}, ${b}, ${c}, ${d}}`, solution_raw: `$$${mean}$$`, steps: [ { text: "Some todos os valores:", latex: `$$${a} + ${b} + ${c} + ${d} = ${sum}$$` }, { text: "Divida a soma pelo número de valores (4):", latex: `$$\\frac{${sum}}{4} = ${mean}$$` } ], hint: "A média é a soma dos valores dividida pela quantidade de valores." };
+                                break;
+                            }
+                            default:
+                                problem = {
+                                    expression_latex: null,
+                                    error: `Desculpe, ainda não temos problemas para o tópico "${topicSelect.options[topicSelect.selectedIndex].text}".`
+                                };
+                                break;
+                        }
+                        resolve(problem);
+                    }, 500);
+                });
+            }
+        };
+
+        function init() {
+            const savedStats = localStorage.getItem('calculusPracticeStats');
+            if (savedStats) { Object.assign(state.stats, JSON.parse(savedStats)); }
+            initChart(); addEventListeners(); switchView('home', true);
+        }
+
+        function addEventListeners() {
+            getProblemBtn.addEventListener('click', getNewProblem);
+            checkAnswerBtn.addEventListener('click', checkAnswer);
+            answerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkAnswer(); });
+            closeModalBtn.addEventListener('click', () => showModal(solutionModal, false));
+            solutionModal.addEventListener('click', (e) => { if (e.target === solutionModal) showModal(solutionModal, false); });
+            resetProgressBtn.addEventListener('click', () => showModal(confirmResetModal, true));
+            cancelResetBtn.addEventListener('click', () => showModal(confirmResetModal, false));
+            confirmResetBtn.addEventListener('click', resetProgress);
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.addEventListener('click', (e) => { e.preventDefault(); switchView(e.currentTarget.dataset.view); });
+            });
+            const homeCards = { 'select-practice': 'practice', 'select-creator': 'creator', 'select-physics': 'physics' };
+            Object.entries(homeCards).forEach(([id, view]) => { document.getElementById(id).addEventListener('click', () => switchView(view)); });
+            sidebarToggleBtn.addEventListener('click', () => toggleSidebar());
+            sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+            getHintBtn.addEventListener('click', getAIHint);
+            explainStepsBtn.addEventListener('click', explainAISteps);
+            generateAiProblemBtn.addEventListener('click', generateAIProblem);
+            aiShowSolutionBtn.addEventListener('click', showAISolution);
+            saveApiKeyBtn.addEventListener('click', saveApiKey);
+            closeApiKeyModalBtn.addEventListener('click', () => showModal(apiKeyModal, false));
+            goToSettingsBtn.addEventListener('click', (e) => { e.preventDefault(); showModal(apiKeyModal, false); switchView('settings'); });
+            apiKeyModal.addEventListener('click', (e) => { if (e.target === apiKeyModal) showModal(apiKeyModal, false); });
+            closeExplanationModalBtn.addEventListener('click', () => showModal(explanationModal, false));
+            closeExplanationModalBtnIcon.addEventListener('click', () => showModal(explanationModal, false));
+            explanationModal.addEventListener('click', (e) => { if (e.target === explanationModal) showModal(explanationModal, false); });
+            goToLearnBtn.addEventListener('click', goToLearnForCurrentTopic);
+        }
+
+        function switchView(viewId, isInitialLoad = false) {
+            if (state.currentView === viewId && !isInitialLoad) return;
+            mainViews.forEach(view => { view.classList.add('view-hidden'); });
+            const nextView = document.querySelector(`main[data-view-id="${viewId}"]`);
+            if (!nextView) { console.error(`View with id ${viewId} not found.`); return; }
+            state.currentView = viewId;
+            nextView.classList.remove('view-hidden');
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('bg-slate-700');
+                if(link.dataset.view === viewId) { link.classList.add('bg-slate-700'); }
+            });
+            if (window.innerWidth < 768 && document.body.classList.contains('sidebar-open')) {
+                toggleSidebar(false);
+            }
+            lazyInitUI(viewId);
+        }
+
+        function lazyInitUI(viewId) {
+            if (viewId === 'calculator' && !state.uiInitialized.calculator) {
+                initCalculator();
+                state.uiInitialized.calculator = true;
+            }
+            else if(viewId === 'physics' && !state.uiInitialized.physicsGame) { initPhysicsGame(); state.uiInitialized.physicsGame = true; }
+            else if(viewId === 'learn' && !state.uiInitialized.learn) { initLearnView(); state.uiInitialized.learn = true; }
+            else if (viewId === 'fill-blanks' && !state.uiInitialized.fillBlanks) { initFillBlanksGame(); state.uiInitialized.fillBlanks = true; }
+            else if (viewId === 'symbol-memory' && !state.uiInitialized.symbolMemory) { initSymbolMemoryGame(); state.uiInitialized.symbolMemory = true; }
+            else if (viewId === 'scan' && !state.uiInitialized.scan) { initScanView(); state.uiInitialized.scan = true; }
+            else if (viewId === 'settings') { loadApiKey(); }
+        }
+
+        function initCalculator(retryCount = 0) {
+            const MAX_RETRIES = 15;
+            if (window.mathliveStatus === 'failed') {
+                calculatorContent.innerHTML = `<p class="text-red-400 text-center p-4">Erro: Não foi possível carregar a biblioteca do editor de matemática. Verifique sua conexão com a internet e recarregue a página.</p>`;
+                showToast("Falha ao carregar a calculadora.", "error");
+                return;
+            }
+            if (window.mathliveStatus === 'loading') {
+                if (retryCount > MAX_RETRIES) {
+                    calculatorContent.innerHTML = `<p class="text-red-400 text-center p-4">Erro: O carregamento da calculadora demorou demais. Verifique sua conexão e recarregue a página.</p>`;
+                    return;
+                }
+                if (retryCount === 0) calculatorContent.innerHTML = `<div class="flex flex-col items-center justify-center p-8 gap-4"><div class="loader"></div><p>Carregando calculadora...</p></div>`;
+                setTimeout(() => initCalculator(retryCount + 1), 200);
+                return;
+            }
+
+            const calculatorHTML = `
+                <div class="calculator-grid">
+                    <div id="calculator-display-area">
+                        <div id="calculator-input-display"></div>
+                        <div id="calculator-result-display"></div>
+                        <div id="calculator-error-display"></div>
+                    </div>
+                    <div id="calculator-main-panel">
+                        <div>
+                            <label for="custom-problem-input" class="block text-sm font-medium text-slate-400 mb-2">Sua Expressão:</label>
+                            <math-field id="custom-problem-input" class="w-full"></math-field>
+                        </div>
+                        <div id="solve-variable-container" class="hidden">
+                            <label for="solve-variable-input" class="block text-sm font-medium text-slate-400 mb-2">Resolver em relação a:</label>
+                            <input type="text" id="solve-variable-input" class="w-full p-2 border border-slate-600 bg-slate-700 rounded-lg" placeholder="ex: x">
+                        </div>
+                    </div>
+                    <div id="calculator-actions">
+                         <button id="solve-custom-btn" class="w-full h-full bg-amber-500 hover:bg-amber-600 text-white font-bold p-4 rounded-lg shadow-md text-xl flex items-center justify-center disabled:bg-slate-600 disabled:cursor-not-allowed">
+                            <i data-feather="corner-down-left" class="w-8 h-8"></i>
+                         </button>
+                    </div>
+                    <div id="math-keyboard-area">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <select id="calculation-type" class="w-full p-2 border border-slate-600 bg-slate-700 rounded-lg">
+                                <option value="simplify">Simplificar</option> <option value="derivative">Derivada</option> <option value="integral">Integral</option>
+                                <option value="limit">Limite</option> <option value="solve">Resolver Equação</option>
+                            </select>
+                            <button id="clear-calculator-btn" class="w-full bg-slate-600 hover:bg-slate-500 font-bold p-2 rounded-lg flex items-center justify-center gap-2">
+                                <i data-feather="trash-2" class="w-5 h-5"></i> Limpar
+                            </button>
+                        </div>
+                        <div id="math-keyboard">
+                            <button class="math-keyboard-btn fn-btn" data-action="cmd" data-latex="\\sin(#0)">sin</button>
+                            <button class="math-keyboard-btn fn-btn" data-action="cmd" data-latex="\\cos(#0)">cos</button>
+                            <button class="math-keyboard-btn fn-btn" data-action="cmd" data-latex="^{#0}">xʸ</button>
+                            <button class="math-keyboard-btn op-btn" data-action="cmd" data-latex="deleteBackward"><i data-feather="delete"></i></button>
+                            
+                            <button class="math-keyboard-btn" data-action="write" data-latex="7">7</button> <button class="math-keyboard-btn" data-action="write" data-latex="8">8</button>
+                            <button class="math-keyboard-btn" data-action="write" data-latex="9">9</button> <button class="math-keyboard-btn op-btn" data-action="write" data-latex="\\cdot">×</button>
+                            
+                            <button class="math-keyboard-btn" data-action="write" data-latex="4">4</button> <button class="math-keyboard-btn" data-action="write" data-latex="5">5</button>
+                            <button class="math-keyboard-btn" data-action="write" data-latex="6">6</button> <button class="math-keyboard-btn op-btn" data-action="write" data-latex="-">−</button>
+                            
+                            <button class="math-keyboard-btn" data-action="write" data-latex="1">1</button> <button class="math-keyboard-btn" data-action="write" data-latex="2">2</button>
+                            <button class="math-keyboard-btn" data-action="write" data-latex="3">3</button> <button class="math-keyboard-btn op-btn" data-action="write" data-latex="+">+</button>
+
+                            <button class="math-keyboard-btn" data-action="write" data-latex="x">x</button>
+                            <button class="math-keyboard-btn" data-action="write" data-latex="0">0</button>
+                            <button class="math-keyboard-btn" data-action="write" data-latex=".">.</button>
+                            <button class="math-keyboard-btn op-btn" data-action="cmd" data-latex="\\frac{#0}{#1}">÷</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="calculator-steps-area" class="mt-6 hidden bg-slate-800/80 rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-slate-200 mb-4">Passo a Passo</h3>
+                    <div id="calculator-solution-steps" class="space-y-4 text-slate-300"></div>
+                </div>`;
+            calculatorContent.innerHTML = `<h2 class="text-3xl md:text-4xl font-bold text-slate-100 text-center mb-8">Calculadora Passo a Passo</h2> ${calculatorHTML}`;
+            feather.replace();
+
+            mathField = MathLive.makeMathField(document.getElementById('custom-problem-input'), {
+                smartMode: true, onContentDidChange: () => { document.getElementById('solve-custom-btn').disabled = mathField.getValue().trim() === ''; }
+            });
+            
+            const solveBtn = document.getElementById('solve-custom-btn');
+            solveBtn.addEventListener('click', handleCalculation);
+            mathField.addEventListener('change', () => solveBtn.disabled = mathField.getValue().trim() === '');
+            mathField.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleCalculation(); });
+
+            document.getElementById('math-keyboard').querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const { action, latex } = e.currentTarget.dataset;
+                    mathField.focus();
+                    if (action === 'write') mathField.insert(latex);
+                    else if (action === 'cmd') latex === 'deleteBackward' ? mathField.executeCommand('deleteBackward') : mathField.insert(latex, { selectionMode: 'placeholder' });
+                });
+            });
+            const calculationTypeSelect = document.getElementById('calculation-type');
+            calculationTypeSelect.addEventListener('change', (e) => {
+                document.getElementById('solve-variable-container').classList.toggle('hidden', e.target.value !== 'solve');
+            });
+            document.getElementById('clear-calculator-btn').addEventListener('click', () => {
+                mathField.setValue('');
+                Object.values(document.querySelectorAll('#calculator-input-display, #calculator-result-display, #calculator-error-display')).forEach(el => el.innerHTML = '');
+                document.getElementById('calculator-steps-area').classList.add('hidden');
+            });
+            solveBtn.disabled = true;
+        }
+        function handleCalculation() {
+            if (typeof nerdamer === 'undefined') { return showToast("Erro: Biblioteca da calculadora (Nerdamer) não carregada.", "error"); }
+            if (!mathField) { return showToast("Erro: Editor de matemática não inicializado.", "error"); }
+            
+            const expressionLatex = mathField.getValue();
+            if (expressionLatex.trim() === '') { return showToast("Por favor, insira uma expressão.", "info"); }
+
+            const inputDisplay = document.getElementById('calculator-input-display');
+            const resultDisplay = document.getElementById('calculator-result-display');
+            const errorDisplay = document.getElementById('calculator-error-display');
+            const stepsArea = document.getElementById('calculator-steps-area');
+            const stepsContainer = document.getElementById('calculator-solution-steps');
+
+            [inputDisplay, resultDisplay, errorDisplay, stepsContainer].forEach(el => el.innerHTML = '');
+            stepsArea.classList.add('hidden');
+            renderLatexInElement(inputDisplay, `$$${expressionLatex}$$`);
+
+            setTimeout(() => {
+                try {
+                    const calculationType = document.getElementById('calculation-type').value;
+                    const cleanedLatex = expressionLatex.replace(/\\(text|mathrm|textrm)\s*\{[^\}]*\}/g, '');
+                    let nerdamerExpressionStr = nerdamer.convertFromLaTeX(cleanedLatex).toString();
+                    let nerdamerResult, resultTeX = '', steps = [];
+                    
+                    switch (calculationType) {
+                        case 'derivative':
+                            const diffVar = nerdamer(nerdamerExpressionStr).variables()[0] || 'x';
+                            nerdamerResult = nerdamer.diff(nerdamerExpressionStr, diffVar);
+                            resultTeX = nerdamerResult.toTeX();
+                            steps.push({ text: `Derivando a expressão em relação a <strong>${diffVar}</strong>.`, latex: `\\frac{d}{d${diffVar}}\\left(${expressionLatex}\\right) = ${resultTeX}`});
+                            break;
+                        case 'integral':
+                            const intVar = nerdamer(nerdamerExpressionStr).variables()[0] || 'x';
+                            nerdamerResult = nerdamer.integrate(nerdamerExpressionStr, intVar);
+                            resultTeX = `${nerdamerResult.toTeX()} + C`;
+                            steps.push({ text: `Integrando a expressão em relação a <strong>${intVar}</strong>.`, latex: `\\int \\left(${expressionLatex}\\right) d${intVar} = ${resultTeX}`});
+                            break;
+                        case 'limit':
+                             const limMatch = expressionLatex.match(/\\lim_{\s*([a-zA-Z])\s*\\to\s*(.*?)\s*}(.*)/);
+                             if (!limMatch) throw new Error("Formato de limite inválido. Exemplo: lim_{x \\to 0}(sin(x)/x)");
+                             const [, limVar, limPoint, limExprRaw] = limMatch;
+                             const limExprNerdamer = nerdamer.convertFromLaTeX(limExprRaw).toString();
+                             nerdamerResult = nerdamer.limit(limExprNerdamer, limVar, limPoint.trim());
+                             resultTeX = nerdamerResult.toTeX();
+                             steps.push({ text: `Calculando o limite.`, latex: `${expressionLatex} = ${resultTeX}`});
+                             break;
+                        case 'solve':
+                            if (!expressionLatex.includes('=')) throw new Error("Deve ser uma equação com o sinal '='.");
+                            const solveVarInput = document.getElementById('solve-variable-input');
+                            const solveVar = solveVarInput.value.trim() || nerdamer(nerdamerExpressionStr).variables()[0];
+                            if (!solveVar) throw new Error("Especifique a variável para resolver.");
+                            nerdamerResult = nerdamer.solve(nerdamerExpressionStr, solveVar);
+                            resultTeX = `${solveVar} = ${nerdamerResult.toTeX()}`;
+                            steps.push({ text: `Resolvendo a equação para <strong>${solveVar}</strong>.`, latex: resultTeX});
+                            break;
+                        default: // Simplify
+                            nerdamerResult = nerdamer(nerdamerExpressionStr);
+                            resultTeX = nerdamerResult.toTeX();
+                            if(resultTeX !== cleanedLatex) steps.push({ text: `A expressão simplifica para:`, latex: resultTeX });
+                            break;
+                    }
+
+                    renderLatexInElement(resultDisplay, `$$${resultTeX}$$`);
+                    if(steps.length > 0) {
+                        steps.forEach(step => {
+                            const li = document.createElement('li');
+                            li.className = 'p-3 bg-slate-900/50 rounded-lg';
+                            li.innerHTML = `<p class="mb-2">${step.text}</p><div class="text-center text-lg" id="step-${Math.random()}"></div>`;
+                            stepsContainer.appendChild(li);
+                            renderLatexInElement(li.querySelector('div'), `$$${step.latex}$$`);
+                        });
+                        stepsArea.classList.remove('hidden');
+                    }
+                } catch (e) {
+                    console.error("Erro no cálculo com Nerdamer:", e);
+                    errorDisplay.textContent = e.message || "Não foi possível resolver. Verifique a sintaxe.";
+                }
+            }, 10);
+        }
+
+        async function getNewProblem() {
+            if (state.loading) return;
+            setLoading(true);
+            getHintBtn.classList.add('hidden');
+            goToLearnBtn.classList.add('hidden');
+            answerSection.classList.add('hidden');
+            problemDisplay.innerHTML = '';
+            initialMessage.style.display = 'none';
+
+            const topic = topicSelect.value;
+            const difficulty = difficultySelect.value;
+
+            try {
+                const problem = await mockApi.getProblem(topic, difficulty);
+                state.currentProblem = problem;
+                state.currentProblem.cachedHint = null;
+                state.currentProblem.cachedExplanation = null;
+                renderProblemContent(problemDisplay, problem);
+
+                if(problem.expression_latex || problem.expression_text) {
+                    answerSection.classList.remove('hidden');
+                    answerInput.value = '';
+                    answerInput.classList.remove('border-green-500', 'border-red-500');
+                    answerInput.focus();
+                } else {
+                     answerSection.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Erro ao buscar problema:", error);
+                showToast("Erro ao buscar problema. Tente novamente.", 'error');
+                problemDisplay.innerHTML = `<p class="text-slate-400 text-lg">Não foi possível carregar o problema.</p>`;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+
+        function checkAnswer() {
+            if (!state.currentProblem || !state.currentProblem.solution_raw) return;
+            const userAnswer = answerInput.value.trim();
+            if (userAnswer === '') { showToast("Por favor, insira uma resposta.", 'info'); return; }
+            
+            // CORREÇÃO: Regex para normalização
+            const normalize = (str) => str.replace(/\s/g, '').replace(/\\|sqrt|\$\$|\{|\}|left|right/g, '').toLowerCase();
+            const correctAnswer = normalize(String(state.currentProblem.solution_raw));
+            const normalizedUserAnswer = normalize(userAnswer);
+
+            const topic = topicSelect.value;
+            const isCorrect = normalizedUserAnswer === correctAnswer;
+
+            if (isCorrect) {
+                state.stats[topic].correct++; state.streak++;
+                showToast("Correto!", 'success');
+                answerInput.classList.add('border-green-500'); answerInput.classList.remove('border-red-500');
+                updateStreakCounter();
+                setTimeout(getNewProblem, 1000);
+            } else {
+                state.stats[topic].incorrect++; state.streak = 0;
+                showToast("Incorreto. Tente novamente ou veja a solução.", 'error');
+                answerInput.classList.add('border-red-500'); answerInput.classList.remove('border-green-500');
+                answerInput.classList.add('shake'); setTimeout(() => answerInput.classList.remove('shake'), 820);
+                getHintBtn.classList.remove('hidden');
+                goToLearnBtn.classList.remove('hidden');
+                updateStreakCounter();
+                state.modalContext = 'practice';
+                showSolutionModal();
+            }
+            saveStats(); updateChart();
+        }
+
+        function saveStats() { localStorage.setItem('calculusPracticeStats', JSON.stringify(state.stats)); }
+
+        function resetProgress() {
+            state.stats = getInitialStats(); saveStats(); updateChart();
+            showToast("Seu progresso foi redefinido.", 'info'); showModal(confirmResetModal, false);
+        }
+
+        function setLoading(isLoading, buttonType = 'default') {
+            let textEl, loaderEl, btnEl;
+            switch (buttonType) {
+                case 'ai': textEl = aiBtnText; loaderEl = aiBtnLoader; btnEl = generateAiProblemBtn; break;
+                case 'scan': textEl = scanBtnText; loaderEl = scanBtnLoader; btnEl = scanImageBtn; break;
+                case 'hint': btnEl = getHintBtn; break;
+                case 'explain': btnEl = explainStepsBtn; break;
+                default: textEl = btnText; loaderEl = btnLoader; btnEl = getProblemBtn; break;
+            }
+            state.loading = isLoading;
+            if(btnEl) btnEl.disabled = isLoading;
+            if(textEl) textEl.classList.toggle('hidden', isLoading);
+            if(loaderEl) loaderEl.classList.toggle('hidden', !isLoading);
+        }
+
+        function showToast(message, type = 'info') {
+            const colors = { info: 'bg-blue-500', success: 'bg-green-500', error: 'bg-red-500' };
+            const toast = document.createElement('div');
+            toast.className = `toast text-white px-6 py-3 rounded-lg shadow-lg ${colors[type]}`;
+            toast.textContent = message; toastContainer.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.add('is-visible'); });
+            setTimeout(() => {
+                toast.classList.remove('is-visible');
+                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+            }, 3000);
+        }
+
+        function showModal(modalElement, show) {
+            modalElement.classList.toggle('is-open', show);
+        }
+
+        function showSolutionModal() {
+            if (!state.currentProblem) return;
+            const { currentProblem, modalContext } = state;
+            modalTitle.textContent = 'Resolução Passo a Passo';
+            explainStepsBtn.classList.toggle('hidden', modalContext !== 'ai_problem' && modalContext !== 'scan_solution');
+
+            renderProblemContent(modalOriginalProblem, {
+                expression_latex: currentProblem.expression_latex,
+                expression_text: currentProblem.expression_text
+            });
+
+            solutionSteps.innerHTML = '';
+            if(currentProblem.steps && currentProblem.steps.length > 0){
+                currentProblem.steps.forEach(step => {
+                    const li = document.createElement('li'); li.className = 'p-3 bg-slate-700 rounded-lg';
+                    const textSpan = document.createElement('p'); textSpan.className = 'mb-2';
+                    renderLatexInElement(textSpan, step.text);
+                    const latexDiv = document.createElement('div'); latexDiv.className = 'text-center';
+                    renderLatexInElement(latexDiv, step.latex);
+                    li.appendChild(textSpan); li.appendChild(latexDiv); solutionSteps.appendChild(li);
+                });
+            } else { solutionSteps.innerHTML = '<p>Nenhum passo a passo disponível para este problema.</p>'; }
+            showModal(solutionModal, true);
+        }
+
+        function updateStreakCounter() {
+            streakValue.textContent = state.streak;
+            streakCounter.classList.toggle('scale-0', state.streak <= 0);
+        }
+
+        function toggleSidebar(forceState) {
+            const shouldBeOpen = forceState !== undefined ? forceState : !document.body.classList.contains('sidebar-open');
+            document.body.classList.toggle('sidebar-open', shouldBeOpen);
+            sidebar.classList.toggle('-translate-x-full', !shouldBeOpen);
+        }
+
+        function initChart() {
+            if(progressChart) progressChart.destroy();
+            const ctx = chartCanvas.getContext('2d');
+            const color = '#cbd5e1';
+            const gridColor = 'rgba(255,255,255,0.1)';
+            const labels = Object.keys(state.stats).map(key => topicSelect.querySelector(`option[value="${key}"]`)?.textContent || key);
+            const correctData = Object.values(state.stats).map(s => s.correct);
+            const incorrectData = Object.values(state.stats).map(s => s.incorrect);
+            progressChart = new Chart(ctx, {
+                type: 'bar', data: { labels, datasets: [ { label: 'Acertos', data: correctData, backgroundColor: 'rgba(16, 185, 129, 0.6)', borderColor: 'rgba(5, 150, 105, 1)', borderWidth: 1 },
+                    { label: 'Erros', data: incorrectData, backgroundColor: 'rgba(239, 68, 68, 0.6)', borderColor: 'rgba(220, 38, 38, 1)', borderWidth: 1 } ] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color }, grid: { color: gridColor } },
+                        y: { beginAtZero: true, ticks: { color, stepSize: 1 }, grid: { color: gridColor } } },
+                    plugins: { legend: { labels: { color } } } }
+            });
+        }
+
+        function updateChart() {
+            if (!progressChart) { initChart(); return; }
+            progressChart.data.datasets[0].data = Object.values(state.stats).map(s => s.correct);
+            progressChart.data.datasets[1].data = Object.values(state.stats).map(s => s.incorrect);
+            progressChart.update();
+        }
+
+        function initLearnView() {
+            const topics = {
+                "Cálculo 1": {
+                    'Derivadas': 'A derivada de uma função mede a sensibilidade à mudança da função. Ela representa a inclinação da reta tangente ao gráfico da função em um dado ponto. A derivada de uma função $f(x)$ é frequentemente denotada como $f\\\'(x)$ ou $\\frac{dy}{dx}$. Por exemplo, se $f(x) = x^n$, então $f\\\'(x) = nx^{n-1}$.',
+                    'Integrais': 'A integral é a operação inversa da derivada. Ela pode ser usada para calcular a área sob uma curva, o volume de sólidos, e outras quantidades que podem ser expressas como a soma de infinitas pequenas partes. Existem integrais indefinidas (que resultam em uma família de funções com uma constante de integração C) e integrais definidas (que resultam em um valor numérico). Por exemplo, $\\int x^n \\,dx = \\frac{x^{n+1}}{n+1} + C$.',
+                    'Limites': 'O limite de uma função é o valor para o qual a função se aproxima à medida que a entrada se aproxima de um determinado valor. Os limites são fundamentais para o cálculo, pois são usados para definir derivadas, integrais e continuidade. A notação para um limite é $\\lim_{x \\to a} f(x) = L$, o que significa que à medida que $x$ se aproxima de $a$ (mas não é igual a $a$), $f(x)$ se aproxima de $L$.',
+                    'Teorema Fundamental do Cálculo': 'O Teorema Fundamental do Cálculo conecta os conceitos de diferenciação e integração, mostrando que são operações inversas uma da outra. Ele tem duas partes principais. A primeira parte afirma que a integral definida de uma função pode ser calculada usando qualquer antiderivada da função. A segunda parte estabelece que a derivada de uma integral definida com limite superior variável é a própria função. Este teorema é crucial para a avaliação de integrais definidas.'
+                },
+                "Cálculo 2": {
+                    'Integrais Definidas': 'Integrais definidas são usadas para calcular a área sob uma curva entre dois pontos específicos, o volume de sólidos de revolução, o comprimento de arco de uma curva, e outras aplicações. A integral definida de uma função $f(x)$ de $a$ a $b$ é denotada por $\\int_{a}^{b} f(x) \\,dx$. O Teorema Fundamental do Cálculo é a principal ferramenta para avaliá-las: $\\int_{a}^{b} f(x) \\,dx = F(b) - F(a)$, onde $F(x)$ é uma antiderivada de $f(x)$.',
+                    'Séries e Sequências': 'Uma sequência é uma lista ordenada de números, como $a_1, a_2, a_3, \\dots$. Uma série é a soma dos termos de uma sequência, como $a_1 + a_2 + a_3 + \\dots = \\sum_{n=1}^{\\infty} a_n$. O estudo de séries e sequências envolve determinar se elas convergem (se aproximam de um valor finito) ou divergem (não se aproximam de um valor finito). Testes como o teste da razão, teste da integral e teste da comparação são usados para determinar a convergência.',
+                    'Equações Diferenciais': 'Equações diferenciais são equações que envolvem uma função desconhecida e suas derivadas. Elas são usadas para modelar uma vasta gama de fenômenos em ciência e engenharia, onde as taxas de mudança são importantes. Exemplos incluem o crescimento populacional, decaimento radioativo, movimento de pêndulos e circuitos elétricos. As soluções para equações diferenciais são funções, não números. Existem vários tipos, como equações diferenciais ordinárias (EDOs) e equações diferenciais parciais (EDPs).'
+                },
+                "Cálculo 3": {
+                    'Vetores': 'Vetores são objetos matemáticos que têm magnitude (comprimento) e direção. Eles são frequentemente usados para representar grandezas físicas como força, velocidade e aceleração. Em cálculo multivariável, vetores são cruciais para descrever pontos e movimentos em espaços 2D e 3D. Operações com vetores incluem adição, subtração, produto escalar (que resulta em um escalar) e produto vetorial (que resulta em um vetor perpendicular aos dois originais). Um vetor em 3D pode ser representado como $\\vec{v} = \\langle x, y, z \\rangle$.',
+                    'Derivadas Parciais': 'Derivadas parciais são usadas para encontrar a taxa de variação de uma função multivariável em relação a uma de suas variáveis, mantendo as outras variáveis constantes. Para uma função $f(x, y)$, a derivada parcial em relação a $x$ é $\\frac{\\partial f}{\\partial x}$ e em relação a $y$ é $\\frac{\\partial f}{\\partial y}$. Elas são essenciais para otimização de funções multivariáveis e para entender superfícies em 3D.',
+                    'Integrais Múltiplas': 'Integrais múltiplas são generalizações de integrais para funções de múltiplas variáveis. As integrais duplas ($\\iint f(x,y)\\,dA$) são usadas para calcular volumes sob superfícies e áreas em regiões 2D. As integrais triplas ($\\iiint f(x,y,z)\\,dV$) são usadas para calcular volumes em 3D e outras quantidades em espaços tridimensionais. A ordem de integração é importante e pode ser alterada usando o Teorema de Fubini.'
+                },
+                "Cálculo 4": {
+                    'Equações Diferenciais Avançadas': 'Este tópico aprofunda os métodos de resolução de equações diferenciais, incluindo equações de ordem superior, sistemas de equações diferenciais e equações diferenciais não lineares. Métodos como a transformada de Laplace, séries de potências e métodos numéricos são empregados para encontrar soluções para problemas mais complexos que surgem em engenharia, física e outras ciências.',
+                    'Séries de Fourier': 'As séries de Fourier permitem representar funções periódicas (aquelas que se repetem em intervalos regulares) como uma soma infinita de funções seno e cosseno. Elas são amplamente utilizadas em processamento de sinais, análise de vibrações, acústica e qualquer campo onde fenômenos periódicos são estudados. A série de Fourier para uma função $f(x)$ com período $2L$ é dada por $f(x) = a_0 + \\sum_{n=1}^{\\infty} (a_n \\cos(\\frac{n\\pi x}{L}) + b_n \\sin(\\frac{n\\pi x}{L}))$, onde $a_0, a_n, b_n$ são coeficientes calculados por integrais.',
+                    'Transformada de Laplace': 'A Transformada de Laplace é uma ferramenta matemática que converte uma função do domínio do tempo ($t$) para o domínio da frequência complexa ($s$). Ela é particularmente útil para resolver equações diferenciais lineares com coeficientes constantes, especialmente aquelas com condições iniciais. A transformada de Laplace simplifica a resolução de EDOs, transformando-as em equações algébricas no domínio $s$, que são mais fáceis de resolver. A notação é $\\mathcal{L}\\{f(t)\\} = F(s)$.'
+                },
+                "Física": {
+                    'Leis de Newton': 'As três leis de Newton descrevem a relação entre o movimento de um objeto e as forças que atuam sobre ele. A Primeira Lei (Lei da Inércia) afirma que um objeto em repouso permanece em repouso e um objeto em movimento permanece em movimento com velocidade constante, a menos que uma força externa atue sobre ele. A Segunda Lei (Lei Fundamental da Dinâmica) é $F = ma$, onde a força resultante sobre um objeto é igual à sua massa multiplicada pela sua aceleração. A Terceira Lei (Lei da Ação e Reação) afirma que para toda ação, há uma reação igual e oposta.',
+                    'Termodinâmica': 'A termodinâmica estuda as relações entre calor, trabalho, temperatura e energia. É um ramo fundamental da física que descreve como a energia é transferida e transformada em sistemas físicos. As leis da termodinâmica governam todos os processos naturais e tecnológicos. A Primeira Lei da Termodinâmica é a conservação da energia: $\\Delta U = Q - W$, onde $\\Delta U$ é a variação da energia interna, $Q$ é o calor adicionado ao sistema e $W$ é o trabalho realizado pelo sistema.',
+                    'Energia Cinética': 'A energia cinética é a energia que um objeto possui devido ao seu movimento. Ela depende da massa do objeto e da sua velocidade. A fórmula para a energia cinética é $E_c = \\frac{1}{2}mv^2$, onde $m$ é a massa do objeto e $v$ é a sua velocidade. Quanto maior a massa e/ou a velocidade de um objeto, maior será a sua energia cinética. É uma forma de energia mecânica e está relacionada ao trabalho realizado para acelerar um objeto de repouso até uma certa velocidade.'
+                },
+                "Matemática Geral": {
+                    'Álgebra Linear': 'A álgebra linear é o estudo de vetores, espaços vetoriais (também chamados de espaços lineares), transformações lineares e sistemas de equações lineares. É uma ferramenta fundamental em muitas áreas da matemática, ciência e engenharia, incluindo gráficos de computador, processamento de imagens, inteligência artificial e otimização. Matrizes são um conceito central na álgebra linear, usadas para representar transformações lineares e resolver sistemas de equações.',
+                    'Matrizes': 'Uma matriz é um arranjo retangular de números, símbolos ou expressões, organizados em linhas e colunas. As matrizes são usadas para representar e manipular dados, resolver sistemas de equações lineares, e realizar transformações geométricas. Operações com matrizes incluem adição, subtração, multiplicação (que não é comutativa) e inversão. O determinante de uma matriz quadrada é um valor escalar que fornece informações sobre suas propriedades, como invertibilidade.',
+                    'Determinantes': 'O determinante é um valor escalar que pode ser calculado a partir dos elementos de uma matriz quadrada. Ele fornece informações importantes sobre a matriz, como se ela é invertível (se o determinante for diferente de zero). Em geometria, o valor absoluto do determinante de uma matriz 2x2 ou 3x3 corresponde à área ou volume de um paralelogramo ou paralelepípedo formado pelos vetores coluna ou linha da matriz. Para uma matriz 2x2 $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$, o determinante é $ad - bc$.'
+                }
+            };
+
+            accordionContainer.innerHTML = '';
+            Object.entries(topics).forEach(([category, subtopics]) => {
+                const categoryHeader = document.createElement('h2');
+                categoryHeader.className = 'text-2xl font-bold text-slate-200 mt-6';
+                categoryHeader.textContent = category;
+                accordionContainer.appendChild(categoryHeader);
+
+                Object.entries(subtopics).forEach(([title, content]) => {
+                    const accordionItem = document.createElement('div');
+                    accordionItem.className = 'bg-slate-800 rounded-lg shadow-md overflow-hidden';
+
+                    const button = document.createElement('button');
+                    button.className = 'w-full flex justify-between items-center p-4 text-left font-semibold text-slate-100';
+                    button.innerHTML = `<span>${title}</span> <i data-feather="chevron-down" class="transition-transform duration-300"></i>`;
+
+                    const contentWrapper = document.createElement('div');
+                    contentWrapper.className = 'accordion-content px-4';
+
+                    const initialContent = document.createElement('div');
+                    renderLatexInElement(initialContent, content);
+
+                    const geminiBtn = document.createElement('button');
+                    geminiBtn.className = 'gemini-btn font-bold py-2 px-3 rounded-lg text-sm mt-4 flex items-center gap-2 transition-transform hover:scale-105 active:scale-95';
+                    geminiBtn.innerHTML = '<span>✨ Explique Mais</span> <div class="loader hidden"></div>';
+
+                    contentWrapper.appendChild(initialContent);
+                    contentWrapper.appendChild(geminiBtn);
+
+                    accordionItem.appendChild(button);
+                    accordionItem.appendChild(contentWrapper);
+                    accordionContainer.appendChild(accordionItem);
+
+                    geminiBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if(geminiBtn.disabled) return;
+                        setLoading(true, 'explain');
+                        try {
+                            const prompt = `Explique o conceito de "${title}" em ${category} de forma didática, como se fosse para um estudante universitário. Use exemplos simples e analogias se possível. Formate as equações usando LaTeX com delimitadores de cifrão ($ ou $$).`;
+                            const explanation = await callGeminiTextAPI(prompt);
+                            showExplanationModal(explanation);
+                        } catch (error) {
+                            console.error("Erro na explicação da IA:", error);
+                        } finally {
+                            setLoading(false, 'explain');
+                        }
+                    });
+
+                    button.addEventListener('click', () => {
+                        const icon = button.querySelector('svg');
+                        const isOpen = contentWrapper.classList.toggle('is-open');
+
+                        if (isOpen) {
+                            contentWrapper.style.maxHeight = contentWrapper.scrollHeight + "px";
+                            icon.style.transform = 'rotate(180deg)';
+                        } else {
+                            contentWrapper.style.maxHeight = '0';
+                            icon.style.transform = 'rotate(0deg)';
+                        }
+                    });
+                });
+            });
+            feather.replace();
+        }
+
+        function createMemoryCards(boardElement, cardsArray) {
+            boardElement.innerHTML = '';
+            cardsArray.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'memory-card w-full h-24 md:h-32 relative bg-slate-700 rounded-lg shadow-md';
+
+                const frontFace = document.createElement('div');
+                frontFace.className = 'front-face p-2 text-sm md:text-base text-slate-100 bg-slate-600';
+
+                const backFace = document.createElement('div');
+                backFace.className = 'back-face border-2 border-slate-600';
+
+                renderLatexInElement(frontFace, item.content);
+
+                card.appendChild(frontFace);
+                card.appendChild(backFace);
+                card.dataset.framework = item.id;
+                boardElement.appendChild(card);
+            });
+        }
+
+        function handleCardFlip(card, game) {
+            if (game.lockBoard || card === game.firstCard || card.classList.contains('matched')) return;
+
+            if (!game.timerInterval) {
+                const isPhysics = game === state.physicsGame;
+                startGameTimer(game, isPhysics ? timerDisplay : symbolTimerDisplay);
+            }
+
+            card.classList.add('flipped');
+            if (!game.hasFlippedCard) {
+                game.hasFlippedCard = true;
+                game.firstCard = card;
+                return;
+            }
+            game.secondCard = card;
+            game.moves++;
+            updateGameCounters(game);
+            checkForMatch(game);
+        }
+
+        function checkForMatch(game) {
+            const isMatch = game.firstCard.dataset.framework === game.secondCard.dataset.framework;
+            isMatch ? disableCards(game) : unflipCards(game);
+        }
+
+        function disableCards(game) {
+            game.firstCard.classList.add('matched');
+            game.secondCard.classList.add('matched');
+
+            const isPhysicsGame = game === state.physicsGame;
+            const board = isPhysicsGame ? memoryGameBoard : symbolMemoryGameBoard;
+            const timer = isPhysicsGame ? timerDisplay : symbolTimerDisplay;
+
+            checkGameCompletion(game, board, timer);
+            resetBoard(game);
+        }
+
+        function unflipCards(game) {
+            game.lockBoard = true;
+            setTimeout(() => {
+                if(game.firstCard) game.firstCard.classList.remove('flipped');
+                if(game.secondCard) game.secondCard.classList.remove('flipped');
+                resetBoard(game);
+            }, 1200);
+        }
+
+        function resetBoard(game) {
+            [game.hasFlippedCard, game.lockBoard] = [false, false];
+            [game.firstCard, game.secondCard] = [null, null];
+        }
+
+        function updateGameCounters(game) {
+            if (game === state.physicsGame) {
+                movesCounter.textContent = game.moves;
+            } else if (game === state.symbolMemoryGame) {
+                symbolMovesCounter.textContent = game.moves;
+            }
+        }
+
+        function startGameTimer(game, display) {
+            clearInterval(game.timerInterval);
+            game.timerInterval = null;
+            display.classList.remove('text-green-400');
+            game.seconds = 0;
+            display.textContent = '0s';
+            game.timerInterval = setInterval(() => {
+                game.seconds++;
+                display.textContent = `${game.seconds}s`;
+            }, 1000);
+        }
+
+        function checkGameCompletion(game, board, timerDisplayElement) {
+            const allCards = board.querySelectorAll('.memory-card');
+            const allMatched = Array.from(allCards).every(card => card.classList.contains('matched'));
+            if (allMatched) {
+                clearInterval(game.timerInterval);
+                game.timerInterval = null;
+                timerDisplayElement.classList.add('text-green-400');
+                showToast("Parabéns! Você encontrou todos os pares!", "success");
+            }
+        }
+
+        function initPhysicsGame() {
+            clearInterval(state.physicsGame.timerInterval);
+            state.physicsGame.timerInterval = null;
+            timerDisplay.textContent = '0s';
+            timerDisplay.classList.remove('text-green-400');
+
+            const formulas = [
+                { id: 1, content: '$$F=ma$$'}, { id: 1, content: 'Segunda Lei de Newton' },
+                { id: 2, content: '$$s = s_0 + vt$$'}, { id: 2, content: 'MRU' },
+                { id: 3, content: '$$\\Delta U = Q - W$$'}, { id: 3, content: '1ª Lei da Termodinâmica' },
+                { id: 4, content: '$$V = IR$$'}, { id: 4, content: 'Lei de Ohm' },
+                { id: 5, content: '$$P = \\frac{F}{A}$$' }, { id: 5, content: 'Pressão' },
+                { id: 6, content: '$$E_c = \\frac{1}{2}mv^2$$' }, { id: 6, content: 'Energia Cinética' }
+            ];
+
+            formulas.sort(() => 0.5 - Math.random());
+            createMemoryCards(memoryGameBoard, formulas);
+            memoryGameBoard.addEventListener('click', e => {
+                const clickedCard = e.target.closest('.memory-card');
+                if(clickedCard) handleCardFlip(clickedCard, state.physicsGame);
+            });
+            restartGameBtn.addEventListener('click', initPhysicsGame);
+            resetBoard(state.physicsGame);
+            state.physicsGame.moves = 0;
+            updateGameCounters(state.physicsGame);
+        }
+
+        function initSymbolMemoryGame() {
+            clearInterval(state.symbolMemoryGame.timerInterval);
+            state.symbolMemoryGame.timerInterval = null;
+            symbolTimerDisplay.textContent = '0s';
+            symbolTimerDisplay.classList.remove('text-green-400');
+
+            const symbols = [
+                { id: 1, content: '$$\\int$$'}, { id: 1, content: 'Integral' },
+                { id: 2, content: '$$\\sum$$'}, { id: 2, content: 'Somatório' },
+                { id: 3, content: '$$\\partial$$'}, { id: 3, content: 'Derivada Parcial' },
+                { id: 4, content: '$$\\infty$$'}, { id: 4, content: 'Infinito' },
+                { id: 5, content: '$$\\forall$$' }, { id: 5, content: 'Para todos' },
+                { id: 6, content: '$$\\exists$$' }, { id: 6, content: 'Existe' }
+            ];
+
+            symbols.sort(() => 0.5 - Math.random());
+            createMemoryCards(symbolMemoryGameBoard, symbols);
+            symbolMemoryGameBoard.addEventListener('click', e => {
+                const clickedCard = e.target.closest('.memory-card');
+                if(clickedCard) handleCardFlip(clickedCard, state.symbolMemoryGame);
+            });
+            symbolRestartGameBtn.addEventListener('click', initSymbolMemoryGame);
+            resetBoard(state.symbolMemoryGame);
+            state.symbolMemoryGame.moves = 0;
+            updateGameCounters(state.symbolMemoryGame);
+        }
+
+        function initFillBlanksGame() {
+            state.fillBlanksGame.questions = [
+                { question: "A derivada de $x^3$ é ___.", answer: "3x^2" },
+                { question: "A integral de $cos(x)$ é $sin(x) +$ ___.", answer: "C" },
+                { question: "Na fórmula $F=ma$, 'F' representa a ___.", answer: "força" },
+                { question: "O limite de $\\frac{sin(x)}{x}$ quando $x \\to 0$ é ___.", answer: "1" },
+                { question: "A energia potencial gravitacional é dada por $E_p = mgh$, onde 'h' é a ___.", answer: "altura" },
+                { question: "O determinante de uma matriz 2x2 $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$ é ___.", answer: "ad-bc" }
+            ].sort(() => 0.5 - Math.random());
+
+            state.fillBlanksGame.currentIndex = 0;
+            state.fillBlanksGame.score = 0;
+            displayFillBlanksQuestion();
+
+            fillBlanksCheckBtn.addEventListener('click', checkFillBlanksAnswer);
+            fillBlanksNextBtn.addEventListener('click', displayFillBlanksQuestion);
+        }
+
+        function displayFillBlanksQuestion() {
+            const game = state.fillBlanksGame;
+            if (game.currentIndex >= game.questions.length) {
+                fillBlanksQuestion.textContent = `Fim de jogo! Você acertou ${game.score} de ${game.questions.length}.`;
+                fillBlanksCheckBtn.classList.add('hidden');
+                fillBlanksNextBtn.classList.add('hidden');
+                fillBlanksAnswerInput.classList.add('hidden');
+                return;
+            }
+
+            game.currentQuestion = game.questions[game.currentIndex];
+            const questionText = game.currentQuestion.question;
+            renderLatexInElement(fillBlanksQuestion, questionText);
+
+            fillBlanksAnswerInput.value = '';
+            fillBlanksAnswerInput.disabled = false;
+            fillBlanksAnswerInput.classList.remove('hidden');
+            fillBlanksCheckBtn.classList.remove('hidden');
+            fillBlanksNextBtn.classList.add('hidden');
+        }
+
+        function checkFillBlanksAnswer() {
+            const userAnswer = fillBlanksAnswerInput.value.trim();
+            const correctAnswer = state.fillBlanksGame.currentQuestion.answer;
+            if(userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                showToast("Correto!", "success");
+                state.fillBlanksGame.score++;
+            } else {
+                showToast(`Incorreto. A resposta era: ${correctAnswer}`, "error");
+            }
+
+            fillBlanksAnswerInput.disabled = true;
+            fillBlanksCheckBtn.classList.add('hidden');
+            fillBlanksNextBtn.classList.remove('hidden');
+            state.fillBlanksGame.currentIndex++;
+        }
+
+        function initScanView() {
+            openCameraBtn.addEventListener('click', startCamera);
+            scanImageBtn.addEventListener('click', scanImage);
+        }
+
+        async function startCamera() {
+            try {
+                state.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }});
+                cameraStream.srcObject = state.stream;
+                cameraContainer.classList.remove('hidden');
+                scanImageBtn.classList.remove('hidden');
+                openCameraBtn.classList.add('hidden');
+            } catch (err) {
+                console.error("Erro ao acessar a câmera: ", err);
+                showToast("Não foi possível acessar a câmera.", "error");
+            }
+        }
+
+        function stopCamera() {
+            if(state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+            }
+             cameraContainer.classList.add('hidden');
+             scanImageBtn.classList.add('hidden');
+             openCameraBtn.classList.remove('hidden');
+        }
+
+        async function scanImage() {
+            if (typeof nerdamer === 'undefined') { showToast("Erro: Biblioteca da calculadora não carregada.", "error"); return; }
+            setLoading(true, 'scan');
+            scanResultsContainer.classList.remove('hidden');
+            recognizedText.innerHTML = '<div class="flex justify-center"><div class="loader"></div></div>';
+            scanSolution.innerHTML = '';
+            const context = captureCanvas.getContext('2d');
+            captureCanvas.width = cameraStream.videoWidth;
+            captureCanvas.height = cameraStream.videoHeight;
+            context.drawImage(cameraStream, 0, 0, captureCanvas.width, captureCanvas.height);
+            const imageDataUrl = captureCanvas.toDataURL('image/png');
+            const base64ImageData = imageDataUrl.split(',')[1];
+            try {
+                const prompt = "Identifique a expressão matemática nesta imagem. Retorne apenas a expressão em formato LaTeX, sem nenhum outro texto ou marcadores. Certifique-se de que a expressão LaTeX esteja envolta em delimitadores $$ para display mode.";
+                const recognizedLatex = await callGeminiVisionAPI(prompt, base64ImageData);
+                const cleanedLatex = recognizedLatex.replace(/```latex|```/g, '').trim();
+                renderLatexInElement(recognizedText, cleanedLatex);
+                try {
+                    const nerdamerExpression = nerdamer.convertFromLaTeX(cleanedLatex.replace(/\$\$/g, '')).toString();
+                    const result = nerdamer(nerdamerExpression);
+                    const solutionHTML = `<h4 class="font-bold text-slate-200 mb-2 mt-4">Solução Encontrada:</h4><div class="p-3 bg-slate-700 rounded-lg text-xl text-center"><span id="scan-solution-katex"></span></div>`;
+                    scanSolution.innerHTML = solutionHTML;
+                    renderLatexInElement(document.getElementById('scan-solution-katex'), `$$${result.toTeX()}$$`);
+                    state.modalContext = 'scan_solution';
+                    state.currentProblem = { expression_latex: cleanedLatex, steps: [{ text: "Resultado:", latex: `$$${result.toTeX()}$$` }] };
+                } catch (nerdamerError) {
+                    scanSolution.innerHTML = `<p class="text-amber-500 mt-4">Expressão reconhecida, mas não resolvida. Erro: ${nerdamerError.message}</p>`;
+                }
+            } catch (error) {
+                if (error.message !== "API Key not found.") showToast("Não foi possível analisar a imagem.", "error");
+            } finally {
+                setLoading(false, 'scan');
+                stopCamera();
+            }
+        }
+
+        function showExplanationModal(explanationText) {
+            renderLatexInElement(explanationContent, explanationText);
+            showModal(explanationModal, true);
+        }
+
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                showToast("Chave da API salva com sucesso!", 'success');
+            } else {
+                localStorage.removeItem('geminiApiKey');
+                showToast("Chave removida.", 'info');
+            }
+        }
+
+        function loadApiKey() {
+            apiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
+        }
+
+        async function callGeminiVisionAPI(prompt, base64ImageData) {
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if (!apiKey) { showModal(apiKeyModal, true); throw new Error("API Key not found."); }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] }] };
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                if (response.status === 429) {
+                    showToast("Muitas requisições para a API. Por favor, aguarde um momento.", "error");
+                } else if (response.status >= 400 && response.status < 500) {
+                    showModal(apiKeyModal, true);
+                    showToast("Chave da API inválida ou expirada.", "error");
+                }
+                throw new Error(`API call failed: ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.candidates?.[0]?.content?.parts?.[0]) { return result.candidates[0].content.parts[0].text; }
+            else { throw new Error("Resposta da API inválida."); }
+        }
+
+        async function callGeminiTextAPI(prompt, isJson = false) {
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if (!apiKey) { showModal(apiKeyModal, true); throw new Error("API Key not found."); }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+            if (isJson) { payload.generationConfig = { responseMimeType: "application/json" }; }
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                if (response.status === 429) {
+                    showToast("Muitas requisições para a API. Por favor, aguarde um momento.", "error");
+                } else if (response.status >= 400 && response.status < 500) {
+                    showModal(apiKeyModal, true);
+                    showToast("Chave da API inválida ou expirada.", "error");
+                }
+                throw new Error(`API call failed: ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.candidates?.[0]?.content?.parts?.[0]) { return result.candidates[0].content.parts[0].text; }
+            else { throw new Error("Resposta da API inválida."); }
+        }
+
+        async function getAIHint() {
+            if (!state.currentProblem || state.loading) return;
+
+            if (state.currentProblem.cachedHint) {
+                showToast(`Dica: ${state.currentProblem.cachedHint}`, 'info');
+                return;
+            }
+
+            if (state.currentProblem.hint) {
+                state.currentProblem.cachedHint = state.currentProblem.hint;
+                showToast(`Dica: ${state.currentProblem.hint}`, 'info');
+            } else {
+                showToast("Nenhuma dica disponível para este problema.", 'info');
+            }
+        }
+
+        async function explainAISteps() {
+            if (!state.currentProblem?.expression_latex || state.loading) return;
+            if (state.currentProblem.cachedExplanation) {
+                showExplanationModal(state.currentProblem.cachedExplanation);
+                return;
+            }
+
+            const prompt = `Explique didaticamente a resolução para: $$${state.currentProblem.expression_latex}$$. Use Markdown e LaTeX.`;
+            explanationContent.innerHTML = '<div class="flex justify-center"><div class="loader"></div></div>';
+            showModal(explanationModal, true);
+            setLoading(true, 'explain');
+            try {
+                const explanation = await callGeminiTextAPI(prompt);
+                state.currentProblem.cachedExplanation = explanation;
+                showExplanationModal(explanation);
+            } catch (error) {
+                explanationContent.innerHTML = '<p class="text-red-500">Erro ao gerar a explicação.</p>';
+            } finally {
+                setLoading(false, 'explain');
+            }
+        }
+
+        async function generateAIProblem() {
+            const topic = aiTopicInput.value;
+            if (!topic) { showToast("Por favor, insira um tópico.", "error"); return; }
+            setLoading(true, 'ai');
+            aiProblemContainer.classList.add('hidden');
+            const difficulty = aiDifficultySelect.value;
+            const prompt = `Crie um problema de "${topic}" (dificuldade: ${difficulty}) em formato JSON com as chaves "problem_latex", "solution_raw", e "steps". Cada "step" deve ter "text" e "latex". Certifique-se de que todas as expressões LaTeX em "problem_latex", "solution_raw", e "steps.latex" estejam envoltas em delimitadores $$ para display mode.`;
+            try {
+                const rawResponse = await callGeminiTextAPI(prompt, true);
+                const problemData = JSON.parse(rawResponse);
+                state.aiProblem = { expression_latex: problemData.problem_latex, solution_raw: problemData.solution_raw, steps: problemData.steps, };
+                renderLatexInElement(aiProblemDisplay, problemData.problem_latex);
+                aiProblemContainer.classList.remove('hidden');
+            } catch (error) {
+                if (error.message !== "API Key not found.") showToast("Não foi possível gerar o problema. Tente novamente.", "error");
+            } finally {
+                setLoading(false, 'ai');
+            }
+        }
+
+        function showAISolution() {
+            if (!state.aiProblem) return;
+            state.currentProblem = state.aiProblem;
+            state.modalContext = 'ai_problem';
+            showSolutionModal();
+        }
+
+        function goToLearnForCurrentTopic() {
+            const currentTopic = topicSelect.value;
+            let learnCategory = '';
+            let learnSubtopic = '';
+
+            switch (currentTopic) {
+                case 'derivadas': learnCategory = 'Cálculo 1'; learnSubtopic = 'Derivadas'; break;
+                case 'limites': learnCategory = 'Cálculo 1'; learnSubtopic = 'Limites'; break;
+                case 'integrais': learnCategory = 'Cálculo 1'; learnSubtopic = 'Integrais'; break;
+                case 'integrais_definidas': learnCategory = 'Cálculo 2'; learnSubtopic = 'Integrais Definidas'; break;
+                case 'series_sequencias': learnCategory = 'Cálculo 2'; learnSubtopic = 'Séries e Sequências'; break;
+                case 'equacoes_diferenciais': learnCategory = 'Cálculo 2'; learnSubtopic = 'Equações Diferenciais'; break;
+                case 'vetores': learnCategory = 'Cálculo 3'; learnSubtopic = 'Vetores'; break;
+                case 'derivadas_parciais': learnCategory = 'Cálculo 3'; learnSubtopic = 'Derivadas Parciais'; break;
+                case 'integrais_multiplas': learnCategory = 'Cálculo 3'; learnSubtopic = 'Integrais Múltiplas'; break;
+                case 'equacoes_diferenciais_avancadas': learnCategory = 'Cálculo 4'; learnSubtopic = 'Equações Diferenciais Avançadas'; break;
+                case 'series_fourier': learnCategory = 'Cálculo 4'; learnSubtopic = 'Séries de Fourier'; break;
+                case 'transformada_laplace': learnCategory = 'Cálculo 4'; learnSubtopic = 'Transformada de Laplace'; break;
+                case 'cinematica': learnCategory = 'Física'; learnSubtopic = 'Leis de Newton'; break;
+                case 'leis_newton': learnCategory = 'Física'; learnSubtopic = 'Leis de Newton'; break;
+                case 'termodinamica': learnCategory = 'Física'; learnSubtopic = 'Termodinâmica'; break;
+                // Mapeamentos adicionais podem ser necessários
+                default:
+                    showToast("Não há conteúdo de 'Aprenda' diretamente relacionado a este tópico.", "info");
+                    return;
+            }
+
+            switchView('learn');
+            setTimeout(() => {
+                const accordionItems = accordionContainer.querySelectorAll('.bg-slate-800');
+                 let found = false;
+                 accordionItems.forEach(item => {
+                    const button = item.querySelector('button');
+                    const categoryElement = item.previousElementSibling;
+                    let categoryText = '';
+                    // Encontra o cabeçalho da categoria correta
+                    while(categoryElement && categoryElement.tagName !== 'H2') {
+                         categoryElement = categoryElement.previousElementSibling;
+                    }
+                    if(categoryElement) categoryText = categoryElement.textContent;
+
+
+                    if (categoryText.includes(learnCategory) && button && button.textContent.includes(learnSubtopic)) {
+                        const contentWrapper = item.querySelector('.accordion-content');
+                        if (contentWrapper && !contentWrapper.classList.contains('is-open')) {
+                            button.click();
+                        }
+                        button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        found = true;
+                        return;
+                    }
+                 });
+
+                if (!found) {
+                    showToast(`Não foi possível encontrar o tópico "${learnSubtopic}" na seção Aprenda.`, "info");
+                }
+
+            }, 300);
+        }
+
+        // Inicializa a aplicação
+        init();
+    });
+</script>
+</body>
+</html>
+```
